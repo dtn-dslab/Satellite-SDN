@@ -1,10 +1,11 @@
-package util
+package satellite
 
 import (
 	"fmt"
 	"time"
-	"log"
+	// "log"
 	"math"
+	"sort"
 	"strings"
 	"io/ioutil"
 	gosate"github.com/joshuaferrara/go-satellite"
@@ -46,8 +47,8 @@ func (sat *Satellite) Position() (x, y, z float64) {
 		sat.Satellite, year, month,
 		day, hour, minute, second,
 	)
-	log.Printf("%s: x is %2f, y is %2f, z is %2f\n", 
-		sat.Name, position.X, position.Y, position.Z)
+	// log.Printf("%s: x is %2f, y is %2f, z is %2f\n", 
+	// 	sat.Name, position.X, position.Y, position.Z)
 
 	return position.X, position.Y, position.Z
 }
@@ -75,19 +76,19 @@ func (sat *Satellite) Location() (long, lat, alt float64) {
 	// Get satellite's latitude & longtitude & altitude
 	altitude, _, latlong := gosate.ECIToLLA(position, gst)
 	latlong = gosate.LatLongDeg(latlong)
-	log.Printf("%s: long is %2f, lat is %2f, alt is %2f\n", 
-		sat.Name, latlong.Longitude, latlong.Latitude, altitude)
+	// log.Printf("%s: long is %2f, lat is %2f, alt is %2f\n", 
+	// 	sat.Name, latlong.Longitude, latlong.Latitude, altitude)
 
 	return latlong.Longitude, latlong.Latitude, altitude
 }
 
 // Return the distance between two satellites in kilometer.
 func (sat *Satellite) Distance(anotherSat Satellite) int {
-	now := time.Now()
+	// now := time.Now()
 	x1, y1, z1 := sat.Position()
 	x2, y2, z2 := anotherSat.Position()
-	log.Printf("year is %d, month is %d, day is %d, hour is %d, minute is %d, second is %d\n",
-					now.Year(), int(now.Month()), now.Day(), now.Hour(), now.Minute(), now.Second())
+	// log.Printf("year is %d, month is %d, day is %d, hour is %d, minute is %d, second is %d\n",
+	// 				now.Year(), int(now.Month()), now.Day(), now.Hour(), now.Minute(), now.Second())
 	distance := math.Sqrt(
 		(x2 - x1) * (x2 - x1) + 
 		(y2 - y1) * (y2 - y1) + 
@@ -132,6 +133,79 @@ func (c *Constellation) findSatelliteByName(name string) (Satellite, error) {
 		}
 	}
 	return Satellite{}, fmt.Errorf("Could not find the satellite of which name is %s\n", name)
+}
+
+func (c *Constellation) isConnection(sat1, sat2 string) (bool, error) {
+	satellite1, err := c.findSatelliteByName(sat1)
+	if err != nil {
+		return false, fmt.Errorf("The first satellite is not in the constellation\n")
+	}
+	satellite2, err := c.findSatelliteByName(sat2)
+	if err != nil {
+		return false, fmt.Errorf("The second satellite is not in the constellation\n")
+	}
+	
+	// Judge whether two satellites are in the same orbit & Calculate distance with neighbour satellites
+	distancesMap := map[string]int{}
+	_, _, alt1 := satellite1.Location()
+	_, _, alt2 := satellite2.Location()
+	isSameOrbit := math.Abs((alt1 - alt2) / 1000) < 1
+	isHigher := alt2 - alt1 > 0
+	if isSameOrbit {
+		for _, sat := range c.Satellites {
+			_, _, tmpAlt := sat.Location()
+			if sat.Name != sat1 && math.Abs((tmpAlt - alt1) / 1000) < 1 {
+				distance, err := c.Distance(sat.Name, sat1)
+				if err != nil {
+					return false, fmt.Errorf("Calculating distance error in function isConnection\n")
+				}
+				distancesMap[sat.Name] = distance
+			}
+		}
+	} else if isHigher {
+		for _, sat := range c.Satellites {
+			_, _, tmpAlt := sat.Location()
+			if sat.Name != sat1 && (tmpAlt - alt1) / 1000 >= 1 {
+				distance, err := c.Distance(sat.Name, sat1)
+				if err != nil {
+					return false, fmt.Errorf("Calculating distance error in function isConnection\n")
+				}
+				distancesMap[sat.Name] = distance
+			}
+		}
+	} else {
+		for _, sat := range c.Satellites {
+			_, _, tmpAlt := sat.Location()
+			if sat.Name != sat1 && (tmpAlt - alt1) / 1000 <= -1 {
+				distance, err := c.Distance(sat.Name, sat1)
+				if err != nil {
+					return false, fmt.Errorf("Calculating distance error in function isConnection\n")
+				}
+				distancesMap[sat.Name] = distance
+			}
+		}
+	}
+
+	// Sort distance from low to high
+	type Pair struct {
+		name string
+		distance int
+	}
+	pairList := []Pair{}
+	for k, v := range distancesMap {
+		pairList = append(pairList, Pair{k, v})
+	}
+	sort.Slice(pairList, func(i, j int) bool {
+		return pairList[i].distance < pairList[j].distance
+	})
+	if isSameOrbit && 
+		(pairList[0].name == sat2 || (len(pairList) > 1 && pairList[1].name == sat2)) {
+		return true, nil
+	} else if (!isSameOrbit && pairList[0].name == sat2) {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }
 
 func (c *Constellation) Distance(sat1Name, sat2Name string) (int, error) {
