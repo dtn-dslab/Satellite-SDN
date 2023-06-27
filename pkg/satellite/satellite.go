@@ -5,10 +5,9 @@ import (
 	"time"
 	// "log"
 	"math"
-	"sort"
-	"strings"
-	"io/ioutil"
+	
 	gosate"github.com/joshuaferrara/go-satellite"
+	
 )
 
 type Satellite struct {
@@ -83,7 +82,7 @@ func (sat *Satellite) Location() (long, lat, alt float64) {
 }
 
 // Return the distance between two satellites in kilometer.
-func (sat *Satellite) Distance(anotherSat Satellite) int {
+func (sat *Satellite) Distance(anotherSat Satellite) float64 {
 	// now := time.Now()
 	x1, y1, z1 := sat.Position()
 	x2, y2, z2 := anotherSat.Position()
@@ -94,130 +93,30 @@ func (sat *Satellite) Distance(anotherSat Satellite) int {
 		(y2 - y1) * (y2 - y1) + 
 		(z2 - z1) * (z2 - z1),
 	)
-	return int(distance)
+	return distance
 }
 
-type Constellation struct {
-	Satellites []Satellite
-}
-
-func NewConstellation(filePath string) (*Constellation, error) {
-	content, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("Error in reading file %s:%v\n", filePath, err)
-	}
-
-	lines := strings.Split(string(content), "\n")
-	if len(lines) > 0 && lines[len(lines) - 1] == "" {
-		lines = lines[:len(lines) - 1]
-	}
-
-	var constellation Constellation
-	for idx := 0; idx < len(lines); idx += 3 {
-		// Replace blank with -
-		name := strings.Replace(strings.Trim(lines[idx], " "), " ", "-", -1)
-		sat, err := NewStatellite(name, lines[idx + 1], lines[idx + 2])
-		if err != nil {
-			return nil, fmt.Errorf("Error in creating constellation: %v\n", err)
-		}
-		constellation.Satellites = append(constellation.Satellites, *sat)
-	}
-
-	return &constellation, nil
-}
-
-func (c *Constellation) findSatelliteByName(name string) (Satellite, error) {
-	for _, s := range c.Satellites {
-		if s.Name == name {
-			return s, nil
-		}
-	}
-	return Satellite{}, fmt.Errorf("Could not find the satellite of which name is %s\n", name)
-}
-
-func (c *Constellation) isConnection(sat1, sat2 string) (bool, error) {
-	satellite1, err := c.findSatelliteByName(sat1)
-	if err != nil {
-		return false, fmt.Errorf("The first satellite is not in the constellation\n")
-	}
-	satellite2, err := c.findSatelliteByName(sat2)
-	if err != nil {
-		return false, fmt.Errorf("The second satellite is not in the constellation\n")
-	}
-	
-	// Judge whether two satellites are in the same orbit & Calculate distance with neighbour satellites
-	distancesMap := map[string]int{}
-	_, _, alt1 := satellite1.Location()
-	_, _, alt2 := satellite2.Location()
-	isSameOrbit := math.Abs((alt1 - alt2) / 1000) < 1
-	isHigher := alt2 - alt1 > 0
-	if isSameOrbit {
-		for _, sat := range c.Satellites {
-			_, _, tmpAlt := sat.Location()
-			if sat.Name != sat1 && math.Abs((tmpAlt - alt1) / 1000) < 1 {
-				distance, err := c.Distance(sat.Name, sat1)
-				if err != nil {
-					return false, fmt.Errorf("Calculating distance error in function isConnection\n")
-				}
-				distancesMap[sat.Name] = distance
-			}
-		}
-	} else if isHigher {
-		for _, sat := range c.Satellites {
-			_, _, tmpAlt := sat.Location()
-			if sat.Name != sat1 && (tmpAlt - alt1) / 1000 >= 1 {
-				distance, err := c.Distance(sat.Name, sat1)
-				if err != nil {
-					return false, fmt.Errorf("Calculating distance error in function isConnection\n")
-				}
-				distancesMap[sat.Name] = distance
-			}
-		}
+// Return the angle in WGS84's x-y plane
+// The return value ranges from 0 to 2*pi
+func (sat *Satellite) Angle() float64 {
+	x, y, _ := sat.Position()
+	if x > 0 && y > 0 {
+		return math.Atan(y / x)
+	} else if x > 0 && y < 0 {
+		return 2 * math.Pi + math.Atan(y / x)
 	} else {
-		for _, sat := range c.Satellites {
-			_, _, tmpAlt := sat.Location()
-			if sat.Name != sat1 && (tmpAlt - alt1) / 1000 <= -1 {
-				distance, err := c.Distance(sat.Name, sat1)
-				if err != nil {
-					return false, fmt.Errorf("Calculating distance error in function isConnection\n")
-				}
-				distancesMap[sat.Name] = distance
-			}
-		}
-	}
-
-	// Sort distance from low to high
-	type Pair struct {
-		name string
-		distance int
-	}
-	pairList := []Pair{}
-	for k, v := range distancesMap {
-		pairList = append(pairList, Pair{k, v})
-	}
-	sort.Slice(pairList, func(i, j int) bool {
-		return pairList[i].distance < pairList[j].distance
-	})
-	if isSameOrbit && 
-		(pairList[0].name == sat2 || (len(pairList) > 1 && pairList[1].name == sat2)) {
-		return true, nil
-	} else if (!isSameOrbit && pairList[0].name == sat2) {
-		return true, nil
-	} else {
-		return false, nil
-	}
+		return math.Pi + math.Atan(y / x)
+	} 
 }
 
-func (c *Constellation) Distance(sat1Name, sat2Name string) (int, error) {
-	satellite1, err := c.findSatelliteByName(sat1Name)
-	if err != nil {
-		return -1, fmt.Errorf("%v", err)
+// Angle(sat2) - Angle(self) in WGS84's x-y plane
+// The return value ranges from -pi(does not contain) to pi
+func (sat *Satellite) AngleDelta(anotherSat Satellite) float64 {
+	angleDelta := anotherSat.Angle() - sat.Angle()
+	if angleDelta > math.Pi {
+		angleDelta = angleDelta - 2 * math.Pi
+	} else if angleDelta <= -math.Pi {
+		angleDelta = 2 * math.Pi + angleDelta
 	}
-
-	satellite2, err := c.findSatelliteByName(sat2Name)
-	if err != nil {
-		return -1, fmt.Errorf("%v", err)
-	}
-
-	return satellite1.Distance(satellite2), nil
+	return angleDelta
 }
