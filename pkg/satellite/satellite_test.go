@@ -37,3 +37,14 @@ func TestConnection(t *testing.T) {
 		}
 	}
 }
+
+func TestGenerateEdgeSet(t *testing.T) {
+	constellation, err := NewConstellation("../data/geodetic.txt")
+	if err != nil {
+		t.Errorf("%v\n", err)
+	}
+
+	nameMap, edgeSet := constellation.GenerateEdgeSet()
+	t.Logf("NameMap: %v\n", nameMap)
+	t.Logf("EdgeSet: %v\n", edgeSet)
+}

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"io/ioutil"
 	
-	// "ws/dtn-satellite-sdn/pkg/link"
+	"ws/dtn-satellite-sdn/pkg/link"
 )
 
 const orbitAltDelta float64 = 500
@@ -109,8 +109,8 @@ func (c *Constellation) isConnection(sat1, sat2 string) (bool, error) {
 	} else if isHigher {
 		for _, sat := range c.Satellites {
 			_, _, tmpAlt := sat.Location()
-			if sat.Name != sat1 && (tmpAlt - alt1) / orbitAltDelta >= 1 {
-				distance, err := c.Distance(sat.Name, sat1)
+			if sat.Name != sat2 && (tmpAlt - alt2) / orbitAltDelta <= -1 {
+				distance, err := c.Distance(sat.Name, sat2)
 				if err != nil {
 					return false, fmt.Errorf("Calculating distance error in function isConnection\n")
 				}
@@ -142,7 +142,9 @@ func (c *Constellation) isConnection(sat1, sat2 string) (bool, error) {
 	sort.Slice(pairList, func(i, j int) bool {
 		return pairList[i].distance < pairList[j].distance
 	})
-	if pairList[0].name == sat2 {
+	if !isSameOrbit && isHigher && pairList[0].name == sat1 {
+		return true, nil
+	} else if pairList[0].name == sat2 {
 		return true, nil
 	} else {
 		return false, nil
@@ -150,24 +152,79 @@ func (c *Constellation) isConnection(sat1, sat2 string) (bool, error) {
 }
 
 // Return nameMap:int->string and edgeSet
-// func (c *Constellation) GenerateEdgeSet() (map[int]string, []link.Edge) {
-// 	// Initialize nameMap and connGraph
-// 	nodeCount := len(c.Satellites)
-// 	nameMap := map[int]string{}
-// 	for idx, satellite := range c.Satellites {
-// 		nameMap[idx] = satellite.Name
-// 	}
-// 	connGraph := [][]int{}
-// 	for i := 0; i < nodeCount; i++ {
-// 		tmpArr := []int{}
-// 		for j := 0; i < nodeCount; j++ {
-// 			tmpArr = append(tmpArr, 0)
-// 		}
-// 		connGraph = append(connGraph, tmpArr)
-// 	}
+func (c *Constellation) GenerateEdgeSet() (map[int]string, []link.Edge) {
+	// Initialize nameMap and connGraph
+	nodeCount := len(c.Satellites)
+	nameMap := map[int]string{}
+	for idx, satellite := range c.Satellites {
+		nameMap[idx] = satellite.Name
+	}
+	connGraph := [][]int{}
+	for i := 0; i < nodeCount; i++ {
+		tmpArr := []int{}
+		for j := 0; j < nodeCount; j++ {
+			tmpArr = append(tmpArr, 0)
+		}
+		connGraph = append(connGraph, tmpArr)
+	}
 
+	// Construct connGraph
+	for idx1, sat1 := range c.Satellites {
+		nextMinVal, nextMinIdx := 1e9, -1
+		prevMinVal, prevMinIdx := 1e9, -1
+		lowerMinVal, lowerMinIdx := 1e9, -1
 
-// }
+		for idx2, sat2 := range c.Satellites {
+			if idx1 != idx2 {
+				_, _, alt1 := sat1.Location()
+				_, _, alt2 := sat2.Location()
+				angleDelta := sat1.AngleDelta(sat2)
+				isSameOrbit := math.Abs((alt1 - alt2) / orbitAltDelta) < 1
+				isHigher := alt2 - alt1 > 0
+				isPostiveDir := angleDelta > 0
+
+				if isSameOrbit && isPostiveDir {
+					if math.Abs(angleDelta) < nextMinVal {
+						nextMinVal, nextMinIdx = math.Abs(angleDelta), idx2
+					}
+				} else if isSameOrbit && !isPostiveDir {
+					if math.Abs(angleDelta) < prevMinVal {
+						prevMinVal, prevMinIdx = math.Abs(angleDelta), idx2
+					}
+				} else if !isHigher {
+					if sat1.Distance(sat2) < lowerMinVal {
+						lowerMinVal, lowerMinIdx = sat1.Distance(sat2), idx2
+					}
+				} 
+			}
+		}
+
+		if nextMinIdx != -1 {
+			connGraph[idx1][nextMinIdx] = 1
+		}
+		if prevMinIdx != -1 {
+			connGraph[idx1][prevMinIdx] = 1
+		}
+		if lowerMinIdx != -1 {
+			connGraph[idx1][lowerMinIdx] = 1
+			connGraph[lowerMinIdx][idx1] = 1
+		}
+	}
+
+	// Convert connGraph to []link.Edge
+	edgeSet := []link.Edge{}
+	for idx1 := 0; idx1 < nodeCount; idx1++ {
+		for idx2 := idx1 + 1; idx2 < nodeCount; idx2++ {
+			if connGraph[idx1][idx2] == 1 {
+				edgeSet = append(edgeSet, link.Edge{
+					From: idx1, To: idx2,
+				})
+			}
+		}
+	}
+
+	return nameMap, edgeSet
+}
 
 func (c *Constellation) Distance(sat1Name, sat2Name string) (float64, error) {
 	satellite1, err := c.findSatelliteByName(sat1Name)
