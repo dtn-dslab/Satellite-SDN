@@ -3,13 +3,10 @@ package link
 import (
 	"sort"
 	"reflect"
-	"fmt"
-)
+	// "fmt"
 
-type Edge struct {
-	From int
-	To int
-}
+	"ws/dtn-satellite-sdn/pkg/satellite"
+)
 
 func GraphCutHash(nodeSet []int, expectedSplitsCount int) [][]int {
 	ret := [][]int{}
@@ -22,9 +19,9 @@ func GraphCutHash(nodeSet []int, expectedSplitsCount int) [][]int {
 	return ret
 }
 
-func GraphCutLinear(nodeSet []int, edgeSet []Edge, expectedSplitsCount int) [][]int {
+func GraphCutLinear(nodeSet []int, edgeSet []satellite.LinkEdge, expectedSplitsCount int) [][]int {
 	nodeCount, beta := len(nodeSet), 1.0
-	fmt.Println("nodeCount is ", nodeCount)
+	// fmt.Println("nodeCount is ", nodeCount)
 	allPartitions, nextPartitions := [][]int{}, [][]int{}
 	for idx := 0; idx < expectedSplitsCount; idx++ {
 		allPartitions = append(allPartitions, []int{})
@@ -35,7 +32,7 @@ func GraphCutLinear(nodeSet []int, edgeSet []Edge, expectedSplitsCount int) [][]
 	for ; !reflect.DeepEqual(allPartitions, nextPartitions) || firstIter; {
 		firstIter = false
 		copy(allPartitions, nextPartitions)
-		fmt.Println("Iteration!")
+		// fmt.Println("Iteration!")
 		for _, nodeId := range nodeSet {
 			// fmt.Println("SubIteration")
 			// Get corresponding neighbours
@@ -50,7 +47,7 @@ func GraphCutLinear(nodeSet []int, edgeSet []Edge, expectedSplitsCount int) [][]
 			// fmt.Printf("Neighbours of %d:%v\n", nodeId, neighbours)
 			// Add new node to one of partitions
 			nextPartitions = Partition(nextPartitions, nodeId, neighbours, expectedSplitsCount, nodeCount, beta)
-			fmt.Printf("%v\n", nextPartitions)
+			// fmt.Printf("%v\n", nextPartitions)
 			for _, nextPartition := range nextPartitions {
 				sort.Slice(nextPartition, func(i, j int) bool {
 					return nextPartition[i] < nextPartition[j]
@@ -74,7 +71,7 @@ func Partition(curPartitions [][]int, nodeId int, neighbours []int, expectedSpli
 	for idx, partition := range curPartitions {
 		// Deleting the same node
 		newPartition := []int{}
-		for i, _ := range partition {
+		for i := range partition {
 			if partition[i] != nodeId {
 				newPartition = append(newPartition, partition[i])
 			}
@@ -109,8 +106,8 @@ func Partition(curPartitions [][]int, nodeId int, neighbours []int, expectedSpli
 	return nextPartitions
 }
 
-func ComputeEdgesAcrossSubgraphs(nodeSet []int, edgeSet []Edge, partitions [][]int) []Edge {
-	ret := []Edge{}
+func ComputeEdgesAcrossSubgraphs(nodeSet []int, edgeSet []satellite.LinkEdge, partitions [][]int) []satellite.LinkEdge {
+	ret := []satellite.LinkEdge{}
 	for _, edge := range edgeSet {
 		flag1, flag2 := false, false
 		for _, partition := range partitions {

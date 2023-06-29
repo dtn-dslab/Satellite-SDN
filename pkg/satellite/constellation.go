@@ -7,14 +7,17 @@ import (
 	"sort"
 	"strings"
 	"io/ioutil"
-	
-	"ws/dtn-satellite-sdn/pkg/link"
 )
 
 const orbitAltDelta float64 = 500
 
 type Constellation struct {
 	Satellites []Satellite
+}
+
+type LinkEdge struct {
+	From int
+	To int
 }
 
 func NewConstellation(filePath string) (*Constellation, error) {
@@ -30,8 +33,10 @@ func NewConstellation(filePath string) (*Constellation, error) {
 
 	var constellation Constellation
 	for idx := 0; idx < len(lines); idx += 3 {
-		// Replace blank with -
 		name := strings.Replace(strings.Trim(lines[idx], " "), " ", "-", -1)
+		name = strings.Replace(name, "(", "", -1)
+		name = strings.Replace(name, ")", "", -1)
+		name = strings.ToLower(name)
 		sat, err := NewStatellite(name, lines[idx + 1], lines[idx + 2])
 		if err != nil {
 			return nil, fmt.Errorf("Error in creating constellation: %v\n", err)
@@ -152,7 +157,7 @@ func (c *Constellation) isConnection(sat1, sat2 string) (bool, error) {
 }
 
 // Return nameMap:int->string and edgeSet
-func (c *Constellation) GenerateEdgeSet() (map[int]string, []link.Edge) {
+func (c *Constellation) GenerateEdgeSet() (map[int]string, []LinkEdge) {
 	// Initialize nameMap and connGraph
 	nodeCount := len(c.Satellites)
 	nameMap := map[int]string{}
@@ -211,12 +216,12 @@ func (c *Constellation) GenerateEdgeSet() (map[int]string, []link.Edge) {
 		}
 	}
 
-	// Convert connGraph to []link.Edge
-	edgeSet := []link.Edge{}
+	// Convert connGraph to []LinkEdge
+	edgeSet := []LinkEdge{}
 	for idx1 := 0; idx1 < nodeCount; idx1++ {
 		for idx2 := idx1 + 1; idx2 < nodeCount; idx2++ {
 			if connGraph[idx1][idx2] == 1 {
-				edgeSet = append(edgeSet, link.Edge{
+				edgeSet = append(edgeSet, LinkEdge{
 					From: idx1, To: idx2,
 				})
 			}
