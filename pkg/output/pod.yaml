@@ -36,7 +36,7 @@ items:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
         nodeSelector:
-            kubernetes.io/hostname: node2.dtn.lab
+            kubernetes.io/hostname: node1.dtn.lab
     - apiVersion: v1
       metadata:
         name: ajisai-egs
@@ -54,7 +54,7 @@ items:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
         nodeSelector:
-            kubernetes.io/hostname: node3.dtn.lab
+            kubernetes.io/hostname: node2.dtn.lab
     - apiVersion: v1
       metadata:
         name: cosmos-1989-etalon-1
@@ -108,7 +108,7 @@ items:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
         nodeSelector:
-            kubernetes.io/hostname: node2.dtn.lab
+            kubernetes.io/hostname: node1.dtn.lab
     - apiVersion: v1
       metadata:
         name: stella
@@ -126,7 +126,7 @@ items:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
         nodeSelector:
-            kubernetes.io/hostname: node1.dtn.lab
+            kubernetes.io/hostname: node2.dtn.lab
     - apiVersion: v1
       metadata:
         name: lares
@@ -144,4 +144,4 @@ items:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
         nodeSelector:
-            kubernetes.io/hostname: node1.dtn.lab
+            kubernetes.io/hostname: node2.dtn.lab

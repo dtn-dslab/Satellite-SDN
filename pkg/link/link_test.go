@@ -19,8 +19,30 @@ func TestCutGraph(t *testing.T) {
 func TestGeneratePodYaml(t *testing.T) {
 	constellation, err := satellite.NewConstellation("../data/geodetic.txt")
 	if err != nil {
-		t.Errorf("%v\n", err)
+		t.Error(err)
 	}
 
-	GeneratePodSummaryFile(constellation, "../output/pod.yaml", 3)
+	nameMap, edgeSet := constellation.GenerateEdgeSet()
+	GeneratePodSummaryFile(nameMap, edgeSet, "../output/pod.yaml", 3)
+}
+
+func TestGenerateIP(t *testing.T) {
+	ip := GenerateIP(1, 2, true)
+	t.Logf("IP is %s\n", ip)
+	if ip != "128.16.2.1/24" {
+		t.Errorf("IP Dismatch!\n")
+	}
+}
+
+func TestGenerateLinkYaml(t *testing.T) {
+	constellation, err := satellite.NewConstellation("../data/geodetic.txt")
+	if err != nil {
+		t.Error(err)
+	}
+
+	nameMap, edgeSet := constellation.GenerateEdgeSet()
+	err = GenerateLinkSummaryFile(nameMap, edgeSet, "../output/topology.yaml")
+	if err != nil {
+		t.Error(err)
+	}
 }
