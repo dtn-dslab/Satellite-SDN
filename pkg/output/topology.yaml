@@ -7,148 +7,142 @@ items:
         name: starlette
       spec:
         links:
-            - uid: 1
-              local_intf: starlette-lageos-1
-              local_ip: 128.0.1.1/24
-              peer_intf: lageos-1-starlette
-              peer_ip: 128.0.1.2/24
-              peer_pod: lageos-1
             - uid: 2
-              local_intf: starlette-ajisai-egs
+              local_intf: sdneth1
               local_ip: 128.0.2.1/24
-              peer_intf: ajisai-egs-starlette
+              peer_intf: sdneth1
               peer_ip: 128.0.2.2/24
-              peer_pod: ajisai-egs
-            - uid: 5
-              local_intf: starlette-lageos-2
-              local_ip: 128.0.5.1/24
-              peer_intf: lageos-2-starlette
-              peer_ip: 128.0.5.2/24
-              peer_pod: lageos-2
-            - uid: 7
-              local_intf: starlette-lares
-              local_ip: 128.0.7.1/24
-              peer_intf: lares-starlette
-              peer_ip: 128.0.7.2/24
+              peer_pod: ajisaiegs
+            - uid: 6
+              local_intf: sdneth2
+              local_ip: 128.0.6.1/24
+              peer_intf: sdneth1
+              peer_ip: 128.0.6.2/24
+              peer_pod: stella
+    - apiVersion: y-young.github.io/v1
+      kind: Topology
+      metadata:
+        name: lageos1
+      spec:
+        links:
+            - uid: 4099
+              local_intf: sdneth1
+              local_ip: 128.16.3.1/24
+              peer_intf: sdneth1
+              peer_ip: 128.16.3.2/24
+              peer_pod: cosmos1989etalon1
+            - uid: 4100
+              local_intf: sdneth2
+              local_ip: 128.16.4.1/24
+              peer_intf: sdneth1
+              peer_ip: 128.16.4.2/24
+              peer_pod: cosmos2024etalon2
+            - uid: 4101
+              local_intf: sdneth3
+              local_ip: 128.16.5.1/24
+              peer_intf: sdneth1
+              peer_ip: 128.16.5.2/24
+              peer_pod: lageos2
+            - uid: 4103
+              local_intf: sdneth4
+              local_ip: 128.16.7.1/24
+              peer_intf: sdneth1
+              peer_ip: 128.16.7.2/24
               peer_pod: lares
     - apiVersion: y-young.github.io/v1
       kind: Topology
       metadata:
-        name: lageos-1
-      spec:
-        links:
-            - uid: 1
-              local_intf: lageos-1-starlette
-              local_ip: 128.0.1.2/24
-              peer_intf: starlette-lageos-1
-              peer_ip: 128.0.1.1/24
-              peer_pod: starlette
-            - uid: 4100
-              local_intf: lageos-1-cosmos-2024-etalon-2
-              local_ip: 128.16.4.1/24
-              peer_intf: cosmos-2024-etalon-2-lageos-1
-              peer_ip: 128.16.4.2/24
-              peer_pod: cosmos-2024-etalon-2
-            - uid: 4101
-              local_intf: lageos-1-lageos-2
-              local_ip: 128.16.5.1/24
-              peer_intf: lageos-2-lageos-1
-              peer_ip: 128.16.5.2/24
-              peer_pod: lageos-2
-    - apiVersion: y-young.github.io/v1
-      kind: Topology
-      metadata:
-        name: ajisai-egs
+        name: ajisaiegs
       spec:
         links:
             - uid: 2
-              local_intf: ajisai-egs-starlette
+              local_intf: sdneth1
               local_ip: 128.0.2.2/24
-              peer_intf: starlette-ajisai-egs
+              peer_intf: sdneth1
               peer_ip: 128.0.2.1/24
               peer_pod: starlette
-            - uid: 8198
-              local_intf: ajisai-egs-stella
-              local_ip: 128.32.6.1/24
-              peer_intf: stella-ajisai-egs
-              peer_ip: 128.32.6.2/24
-              peer_pod: stella
+            - uid: 8197
+              local_intf: sdneth2
+              local_ip: 128.32.5.1/24
+              peer_intf: sdneth2
+              peer_ip: 128.32.5.2/24
+              peer_pod: lageos2
             - uid: 8199
-              local_intf: ajisai-egs-lares
+              local_intf: sdneth3
               local_ip: 128.32.7.1/24
-              peer_intf: lares-ajisai-egs
+              peer_intf: sdneth2
               peer_ip: 128.32.7.2/24
               peer_pod: lares
     - apiVersion: y-young.github.io/v1
       kind: Topology
       metadata:
-        name: cosmos-1989-etalon-1
+        name: cosmos1989etalon1
       spec:
         links:
+            - uid: 4099
+              local_intf: sdneth1
+              local_ip: 128.16.3.2/24
+              peer_intf: sdneth1
+              peer_ip: 128.16.3.1/24
+              peer_pod: lageos1
             - uid: 12292
-              local_intf: cosmos-1989-etalon-1-cosmos-2024-etalon-2
+              local_intf: sdneth2
               local_ip: 128.48.4.1/24
-              peer_intf: cosmos-2024-etalon-2-cosmos-1989-etalon-1
+              peer_intf: sdneth2
               peer_ip: 128.48.4.2/24
-              peer_pod: cosmos-2024-etalon-2
-            - uid: 12295
-              local_intf: cosmos-1989-etalon-1-lares
-              local_ip: 128.48.7.1/24
-              peer_intf: lares-cosmos-1989-etalon-1
-              peer_ip: 128.48.7.2/24
-              peer_pod: lares
+              peer_pod: cosmos2024etalon2
     - apiVersion: y-young.github.io/v1
       kind: Topology
       metadata:
-        name: cosmos-2024-etalon-2
+        name: cosmos2024etalon2
       spec:
         links:
             - uid: 4100
-              local_intf: cosmos-2024-etalon-2-lageos-1
+              local_intf: sdneth1
               local_ip: 128.16.4.2/24
-              peer_intf: lageos-1-cosmos-2024-etalon-2
+              peer_intf: sdneth2
               peer_ip: 128.16.4.1/24
-              peer_pod: lageos-1
+              peer_pod: lageos1
             - uid: 12292
-              local_intf: cosmos-2024-etalon-2-cosmos-1989-etalon-1
+              local_intf: sdneth2
               local_ip: 128.48.4.2/24
-              peer_intf: cosmos-1989-etalon-1-cosmos-2024-etalon-2
+              peer_intf: sdneth2
               peer_ip: 128.48.4.1/24
-              peer_pod: cosmos-1989-etalon-1
+              peer_pod: cosmos1989etalon1
     - apiVersion: y-young.github.io/v1
       kind: Topology
       metadata:
-        name: lageos-2
+        name: lageos2
       spec:
         links:
-            - uid: 5
-              local_intf: lageos-2-starlette
-              local_ip: 128.0.5.2/24
-              peer_intf: starlette-lageos-2
-              peer_ip: 128.0.5.1/24
-              peer_pod: starlette
             - uid: 4101
-              local_intf: lageos-2-lageos-1
+              local_intf: sdneth1
               local_ip: 128.16.5.2/24
-              peer_intf: lageos-1-lageos-2
+              peer_intf: sdneth3
               peer_ip: 128.16.5.1/24
-              peer_pod: lageos-1
+              peer_pod: lageos1
+            - uid: 8197
+              local_intf: sdneth2
+              local_ip: 128.32.5.2/24
+              peer_intf: sdneth2
+              peer_ip: 128.32.5.1/24
+              peer_pod: ajisaiegs
     - apiVersion: y-young.github.io/v1
       kind: Topology
       metadata:
         name: stella
       spec:
         links:
-            - uid: 8198
-              local_intf: stella-ajisai-egs
-              local_ip: 128.32.6.2/24
-              peer_intf: ajisai-egs-stella
-              peer_ip: 128.32.6.1/24
-              peer_pod: ajisai-egs
+            - uid: 6
+              local_intf: sdneth1
+              local_ip: 128.0.6.2/24
+              peer_intf: sdneth2
+              peer_ip: 128.0.6.1/24
+              peer_pod: starlette
             - uid: 24583
-              local_intf: stella-lares
+              local_intf: sdneth2
               local_ip: 128.96.7.1/24
-              peer_intf: lares-stella
+              peer_intf: sdneth3
               peer_ip: 128.96.7.2/24
               peer_pod: lares
     - apiVersion: y-young.github.io/v1
@@ -157,27 +151,21 @@ items:
         name: lares
       spec:
         links:
-            - uid: 7
-              local_intf: lares-starlette
-              local_ip: 128.0.7.2/24
-              peer_intf: starlette-lares
-              peer_ip: 128.0.7.1/24
-              peer_pod: starlette
+            - uid: 4103
+              local_intf: sdneth1
+              local_ip: 128.16.7.2/24
+              peer_intf: sdneth4
+              peer_ip: 128.16.7.1/24
+              peer_pod: lageos1
             - uid: 8199
-              local_intf: lares-ajisai-egs
+              local_intf: sdneth2
               local_ip: 128.32.7.2/24
-              peer_intf: ajisai-egs-lares
+              peer_intf: sdneth3
               peer_ip: 128.32.7.1/24
-              peer_pod: ajisai-egs
-            - uid: 12295
-              local_intf: lares-cosmos-1989-etalon-1
-              local_ip: 128.48.7.2/24
-              peer_intf: cosmos-1989-etalon-1-lares
-              peer_ip: 128.48.7.1/24
-              peer_pod: cosmos-1989-etalon-1
+              peer_pod: ajisaiegs
             - uid: 24583
-              local_intf: lares-stella
+              local_intf: sdneth3
               local_ip: 128.96.7.2/24
-              peer_intf: stella-lares
+              peer_intf: sdneth2
               peer_ip: 128.96.7.1/24
               peer_pod: stella

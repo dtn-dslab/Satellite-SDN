@@ -34,6 +34,7 @@ func NewConstellation(filePath string) (*Constellation, error) {
 	var constellation Constellation
 	for idx := 0; idx < len(lines); idx += 3 {
 		name := strings.Replace(strings.Trim(lines[idx], " "), " ", "-", -1)
+		name = strings.Replace(name, "-", "", -1)
 		name = strings.Replace(name, "(", "", -1)
 		name = strings.Replace(name, ")", "", -1)
 		name = strings.ToLower(name)

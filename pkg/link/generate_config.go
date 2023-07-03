@@ -57,7 +57,7 @@ func GeneratePodSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdge
 				Containers: []Container{
 					{
 						Name: "satellite",
-						Image: "golang:latest",
+						Image: "golang:1.21-rc-alpine",
 						ImagePullPolicy: "IfNotPresent",
 						Ports: []ContainerPort{
 							{
@@ -96,7 +96,9 @@ func GenerateLinkSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdg
 	topologyList := TopologyList{}
 	topologyList.APIVersion = "v1"
 	topologyList.Kind = "List"
+	podIntfMap := make([]int, len(nameMap))
 	for idx := 0; idx < len(nameMap); idx++ {
+		podIntfMap[idx] = 1
 		topologyList.Items = append(topologyList.Items, Topology{
 			APIVersion: "y-young.github.io/v1",
 			Kind: "Topology",
@@ -113,8 +115,8 @@ func GenerateLinkSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdg
 			Link{
 				UID: (edge.From << 12) + edge.To,
 				PeerPod: nameMap[edge.To],
-				LocalIntf: nameMap[edge.From] + "-" + nameMap[edge.To],
-				PeefIntf: nameMap[edge.To] + "-" + nameMap[edge.From],
+				LocalIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.From]),
+				PeefIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.To]),
 				LocalIP: GenerateIP(uint(edge.From), uint(edge.To), true),
 				PeerIP: GenerateIP(uint(edge.From), uint(edge.To), false),
 			}, 
@@ -124,12 +126,14 @@ func GenerateLinkSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdg
 			Link{
 				UID: (edge.From << 12) + edge.To,
 				PeerPod: nameMap[edge.From],
-				LocalIntf: nameMap[edge.To] + "-" + nameMap[edge.From],
-				PeefIntf: nameMap[edge.From] + "-" + nameMap[edge.To],
+				LocalIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.To]),
+				PeefIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.From]),
 				LocalIP: GenerateIP(uint(edge.From), uint(edge.To), false),
 				PeerIP: GenerateIP(uint(edge.From), uint(edge.To), true),
 			},
 		)
+		podIntfMap[edge.From]++
+		podIntfMap[edge.To]++
 	}
 
 	// Write to file
