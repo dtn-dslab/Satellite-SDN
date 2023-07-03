@@ -158,7 +158,7 @@ func (c *Constellation) isConnection(sat1, sat2 string) (bool, error) {
 }
 
 // Return nameMap:int->string and edgeSet
-func (c *Constellation) GenerateEdgeSet() (map[int]string, []LinkEdge) {
+func (c *Constellation) GenerateConnGraph() (map[int]string, [][]int) {
 	// Initialize nameMap and connGraph
 	nodeCount := len(c.Satellites)
 	nameMap := map[int]string{}
@@ -217,19 +217,7 @@ func (c *Constellation) GenerateEdgeSet() (map[int]string, []LinkEdge) {
 		}
 	}
 
-	// Convert connGraph to []LinkEdge
-	edgeSet := []LinkEdge{}
-	for idx1 := 0; idx1 < nodeCount; idx1++ {
-		for idx2 := idx1 + 1; idx2 < nodeCount; idx2++ {
-			if connGraph[idx1][idx2] == 1 {
-				edgeSet = append(edgeSet, LinkEdge{
-					From: idx1, To: idx2,
-				})
-			}
-		}
-	}
-
-	return nameMap, edgeSet
+	return nameMap, connGraph
 }
 
 func (c *Constellation) Distance(sat1Name, sat2Name string) (float64, error) {
@@ -245,3 +233,43 @@ func (c *Constellation) Distance(sat1Name, sat2Name string) (float64, error) {
 
 	return satellite1.Distance(satellite2), nil
 }
+
+func (c *Constellation) GenerateDistanceMap(connGraph [][]int) [][]float64 {
+	// Initialize distanceMap (distance is 1e9 at first)
+	distanceMap := [][]float64{}
+	for i := 0; i < len(connGraph); i++ {
+		arr := []float64{}
+		for j := 0; j < len(connGraph); j++ {
+			arr = append(arr, 1e9)
+		}
+		distanceMap = append(distanceMap, arr)
+	}
+
+	// Compute distance
+	for idx1, sat1 := range c.Satellites {
+		for idx2, sat2 := range c.Satellites {
+			if connGraph[idx1][idx2] == 1 {
+				distanceMap[idx1][idx2] = sat1.Distance(sat2)
+			} else if idx1 == idx2 {
+				distanceMap[idx1][idx2] = 0
+			}
+		}
+	}
+
+	return distanceMap
+}
+
+func ConvertConnGraphToEdgeSet(connGraph [][]int) []LinkEdge {
+	edgeSet := []LinkEdge{}
+	for idx1 := 0; idx1 < len(connGraph); idx1++ {
+		for idx2 := idx1 + 1; idx2 < len(connGraph); idx2++ {
+			if connGraph[idx1][idx2] == 1 {
+				edgeSet = append(edgeSet, LinkEdge{
+					From: idx1, To: idx2,
+				})
+			}
+		}
+	}
+	return edgeSet
+}
+

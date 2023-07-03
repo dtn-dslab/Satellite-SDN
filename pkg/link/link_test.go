@@ -22,7 +22,8 @@ func TestGeneratePodYaml(t *testing.T) {
 		t.Error(err)
 	}
 
-	nameMap, edgeSet := constellation.GenerateEdgeSet()
+	nameMap, connGraph := constellation.GenerateConnGraph()
+	edgeSet := satellite.ConvertConnGraphToEdgeSet(connGraph)
 	GeneratePodSummaryFile(nameMap, edgeSet, "../output/pod.yaml", 3)
 }
 
@@ -40,7 +41,8 @@ func TestGenerateLinkYaml(t *testing.T) {
 		t.Error(err)
 	}
 
-	nameMap, edgeSet := constellation.GenerateEdgeSet()
+	nameMap, connGraph := constellation.GenerateConnGraph()
+	edgeSet := satellite.ConvertConnGraphToEdgeSet(connGraph)
 	err = GenerateLinkSummaryFile(nameMap, edgeSet, "../output/topology.yaml")
 	if err != nil {
 		t.Error(err)

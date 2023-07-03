@@ -44,7 +44,20 @@ func TestGenerateEdgeSet(t *testing.T) {
 		t.Errorf("%v\n", err)
 	}
 
-	nameMap, edgeSet := constellation.GenerateEdgeSet()
+	nameMap, connGraph := constellation.GenerateConnGraph()
+	edgeSet := ConvertConnGraphToEdgeSet(connGraph)
 	t.Logf("NameMap: %v\n", nameMap)
 	t.Logf("EdgeSet: %v\n", edgeSet)
+}
+
+func TestGenerateDistanceMap(t *testing.T) {
+	constellation, err := NewConstellation("../data/geodetic.txt")
+	if err != nil {
+		t.Errorf("%v\n", err)
+	}
+
+	nameMap, connGraph := constellation.GenerateConnGraph()
+	distanceMap := constellation.GenerateDistanceMap(connGraph)
+	t.Logf("NameMap: %v\n", nameMap)
+	t.Logf("DistanceMap: %v\n", distanceMap)
 }

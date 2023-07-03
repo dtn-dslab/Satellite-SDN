@@ -163,3 +163,7 @@ func GenerateIP(lowerId, higherId uint, isLower bool) string {
 	
 	return strings.Join(netIP, ".") + "/24"
 }
+
+func GenerateRouteSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdge, outputPath string) error {
+	return nil
+}
