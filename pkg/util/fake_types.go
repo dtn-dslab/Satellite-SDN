@@ -1,4 +1,4 @@
-package link
+package util
 
 // These types are only used for generating yaml file.
 
@@ -82,4 +82,35 @@ type TopologyList struct {
 	Kind string `json:"kind" yaml:"kind"`
 
 	Items []Topology `json:"items" yaml:"items"`
+}
+
+type SubPath struct {
+	Name string `json:"name" yaml:"name"`
+
+	NextIP string `json:"nextip" yaml:"nextip"`
+}
+
+type RouteSpec struct {
+	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+
+	SubPaths []SubPath `json:"subpaths"`
+}
+
+type Route struct {
+	APIVersion string `json:"apiVersion" yaml:"apiVersion"`
+
+	MetaData MetaData `json:"metadata" yaml:"metadata"`
+
+	Kind string `json:"kind" yaml:"kind"`
+
+	Spec RouteSpec `json:"spec" yaml:"spec"`
+}
+
+type RouteList struct {
+	APIVersion string `json:"apiVersion" yaml:"apiVersion"`
+
+	Kind string `json:"kind" yaml:"kind"`
+
+	Items []Route `json:"items" yaml:"items"`
 }

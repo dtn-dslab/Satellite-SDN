@@ -1,6 +1,13 @@
 package route
 
-import "ws/dtn-satellite-sdn/pkg/link"
+import (
+	"fmt"
+	"io/ioutil"
+	"ws/dtn-satellite-sdn/pkg/link"
+	"ws/dtn-satellite-sdn/pkg/util"
+
+	"gopkg.in/yaml.v3"
+)
 
 func GenerateRouteSummaryFile(nameMap map[int]string, routeTable [][]int, outputPath string) error {
 	// Initialize & Create vxlanIPTable
@@ -20,12 +27,40 @@ func GenerateRouteSummaryFile(nameMap map[int]string, routeTable [][]int, output
 	}
 
 	// Create routeList
-	// for idx1 := range routeTable {
-	// 	for idx2 := range routeTable[idx1] {
-	// 		if routeTable[idx1][idx2] != -1 {
+	routeList := util.RouteList{}
+	routeList.APIVersion = "v1"
+	routeList.Kind = "List"
+	for idx1 := range routeTable {
+		route := util.Route {
+			APIVersion: "v1",
+			MetaData: util.MetaData{
+				Name: nameMap[idx1],
+			},
+			Kind: "Route",
+			Spec: util.RouteSpec{
+				SubPaths: []util.SubPath{},
+			},
+		}
+		for idx2 := range routeTable[idx1] {
+			if routeTable[idx1][idx2] != -1 {
+				route.Spec.SubPaths = append(
+					route.Spec.SubPaths, 
+					util.SubPath{
+						Name: nameMap[idx2],
+						NextIP: vxlanIPTable[idx1][idx2],
+					},
+				)
+			}
+		}
+		routeList.Items = append(routeList.Items, route)
+	}
 
-	// 		}
-	// 	}
-	// }
+	// Write to file
+	conf, err := yaml.Marshal(routeList)
+	if err != nil {
+		return fmt.Errorf("Error in parsing routeList to yaml: %v\n", err)
+	}
+	ioutil.WriteFile(outputPath, conf, 0644)
+
 	return nil
 }

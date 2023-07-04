@@ -22,14 +22,17 @@ import (
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+type SubPath struct {
+	Name string `json:"name,omitempty"`
 
+	NextIP string `json:"nextip,omitempty"`
+}
 // RouteSpec defines the desired state of Route
 type RouteSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Route. Edit route_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	SubPaths []SubPath `json:"subpaths,omitempty"`
 }
 
 // RouteStatus defines the observed state of Route

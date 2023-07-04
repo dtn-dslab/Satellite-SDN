@@ -19,4 +19,9 @@ func TestComputeRoutes(t *testing.T) {
 
 	routeTable := ComputeRoutes(distanceMap, 8)
 	t.Logf("RouteTable: %v\n", routeTable)
+
+	err = GenerateRouteSummaryFile(nameMap, routeTable, "../output/route.yaml")
+	if err != nil {
+		t.Error(err)
+	}
 }

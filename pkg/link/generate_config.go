@@ -9,10 +9,11 @@ import (
 	
 	"gopkg.in/yaml.v3"
 	"ws/dtn-satellite-sdn/pkg/satellite"
+	"ws/dtn-satellite-sdn/pkg/util"
 )
 
 func GeneratePodSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdge, outputPath string, expectedNodeNum int) error {
-	podList := PodList{}
+	podList := util.PodList{}
 	podList.Kind = "PodList"
 	podList.APIVersion = "v1"
 
@@ -47,19 +48,19 @@ func GeneratePodSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdge
 
 	// Construct pods
 	for idx := 0; idx < len(nameMap); idx++ {
-		pod := Pod{
+		pod := util.Pod{
 			APIVersion: "v1",
 			Kind: "Pod",
-			MetaData: MetaData{
+			MetaData: util.MetaData{
 				Name: nameMap[idx],
 			},
-			Spec: PodSpec{
-				Containers: []Container{
+			Spec: util.PodSpec{
+				Containers: []util.Container{
 					{
 						Name: "satellite",
 						Image: "golang:1.21-rc-alpine",
 						ImagePullPolicy: "IfNotPresent",
-						Ports: []ContainerPort{
+						Ports: []util.ContainerPort{
 							{
 								ContainerPort: 8080,
 							},
@@ -93,16 +94,16 @@ func GeneratePodSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdge
 
 func GenerateLinkSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdge, outputPath string) error {
 	// Initialize topologyList
-	topologyList := TopologyList{}
+	topologyList := util.TopologyList{}
 	topologyList.APIVersion = "v1"
 	topologyList.Kind = "List"
 	podIntfMap := make([]int, len(nameMap))
 	for idx := 0; idx < len(nameMap); idx++ {
 		podIntfMap[idx] = 1
-		topologyList.Items = append(topologyList.Items, Topology{
+		topologyList.Items = append(topologyList.Items, util.Topology{
 			APIVersion: "y-young.github.io/v1",
 			Kind: "Topology",
-			MetaData: MetaData{
+			MetaData: util.MetaData{
 				Name: nameMap[idx],
 			},
 		})
@@ -112,7 +113,7 @@ func GenerateLinkSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdg
 	for _, edge := range edgeSet {
 		topologyList.Items[edge.From].Spec.Links = append(
 			topologyList.Items[edge.From].Spec.Links,
-			Link{
+			util.Link{
 				UID: (edge.From << 12) + edge.To,
 				PeerPod: nameMap[edge.To],
 				LocalIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.From]),
@@ -123,7 +124,7 @@ func GenerateLinkSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdg
 		)
 		topologyList.Items[edge.To].Spec.Links = append(
 			topologyList.Items[edge.To].Spec.Links, 
-			Link{
+			util.Link{
 				UID: (edge.From << 12) + edge.To,
 				PeerPod: nameMap[edge.From],
 				LocalIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.To]),
@@ -162,8 +163,4 @@ func GenerateIP(lowerId, higherId uint, isLower bool) string {
 	}
 	
 	return strings.Join(netIP, ".") + "/24"
-}
-
-func GenerateRouteSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdge, outputPath string) error {
-	return nil
 }
