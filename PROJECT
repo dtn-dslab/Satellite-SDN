@@ -1,0 +1,16 @@
+domain: dtn-satellite-sdn
+layout:
+- go.kubebuilder.io/v3
+projectName: dtn-satellite-sdn
+repo: ws/dtn-satellite-sdn
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: dtn-satellite-sdn
+  group: sdn
+  kind: Route
+  path: ws/dtn-satellite-sdn/api/v1
+  version: v1
+version: "3"
