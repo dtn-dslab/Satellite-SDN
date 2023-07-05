@@ -18,7 +18,17 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"math/rand"
+	"net/http"
+	"os/exec"
+	"path"
+	"reflect"
+	"strings"
+	"time"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,11 +57,169 @@ type RouteReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
 func (r *RouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log := log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	var route sdnv1.Route
+	if err := r.Get(ctx, req.NamespacedName, &route); err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Info("Route deleted")
+		} else {
+			log.Error(err, "Unable to fetch route")
+		}
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	// Spec remains the same, nothing to do
+	if reflect.DeepEqual(route.Status.SubPaths, route.Spec.SubPaths) {
+		return ctrl.Result{}, nil
+	}
+
+	// Update route table in the pod
+	var add, del, update []sdnv1.SubPath
+	if route.Status.SubPaths == nil {
+		add = route.Spec.DeepCopy().SubPaths
+	} else {
+		add, del, update = r.CalcDiff(route.Status.SubPaths, route.Spec.SubPaths)
+	}
+
+	if err := r.DelSubpaths(ctx, route.Name, del); err != nil {
+		log.Error(err, "Failed to delete subpaths")
+		return ctrl.Result{}, err
+	}
+
+	if err := r.AddSubpaths(ctx, route.Name, add); err != nil {
+		log.Error(err, "Failed to add subpaths")
+		return ctrl.Result{}, err
+	}
+
+	if err := r.UpdateSubpaths(ctx, route.Name, update); err != nil {
+		log.Error(err, "Failed to update subpaths")
+		return ctrl.Result{}, err
+	}
+
+	// Update route object in k8s cluster
+	route.Status.SubPaths = route.Spec.DeepCopy().SubPaths
+	if err := r.Status().Update(ctx, &route); err != nil {
+		log.Error(err, "Failed to update status")
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *RouteReconciler) AddSubpaths(ctx context.Context, podName string, subpaths []sdnv1.SubPath) error {
+	log := log.FromContext(ctx)
+
+	var podIP string
+	var err error
+	for podIP, err = GetPodIP(podName); err != nil; {
+		log.Info("Retry!")
+		duration := 3000 + rand.Int31() % 2000
+		time.Sleep(time.Duration(duration))
+		podIP, err = GetPodIP(podName)
+	}
+
+	postURL :=  path.Join(podIP, "/route/apply")
+	jsonVal, _ := json.Marshal(subpaths)
+	resp, err := http.Post(
+		postURL, 
+		"application/json",
+		strings.NewReader(string(jsonVal)),
+	)
+	if err != nil {
+		log.Info("StatusCode is %d:%v", resp.StatusCode, err)
+		return err
+	}
+
+	return nil
+}
+
+
+func (r *RouteReconciler) DelSubpaths(ctx context.Context, podName string, subpaths []sdnv1.SubPath) error {
+	log := log.FromContext(ctx)
+
+	var podIP string
+	var err error
+	for podIP, err = GetPodIP(podName); err != nil; {
+		log.Info("Retry!")
+		duration := 3000 + rand.Int31() % 2000
+		time.Sleep(time.Duration(duration))
+		podIP, err = GetPodIP(podName)
+	}
+
+	postURL :=  path.Join(podIP, "/route/del")
+	jsonVal, _ := json.Marshal(subpaths)
+	resp, err := http.Post(
+		postURL, 
+		"application/json",
+		strings.NewReader(string(jsonVal)),
+	)
+	if err != nil {
+		log.Info("StatusCode is %d:%v", resp.StatusCode, err)
+		return err
+	}
+
+	return nil
+}
+
+func (r *RouteReconciler) UpdateSubpaths(ctx context.Context, podName string, subpaths []sdnv1.SubPath) error {
+	log := log.FromContext(ctx)
+
+	var podIP string
+	var err error
+	for podIP, err = GetPodIP(podName); err != nil; {
+		log.Info("Retry!")
+		duration := 3000 + rand.Int31() % 2000
+		time.Sleep(time.Duration(duration))
+		podIP, err = GetPodIP(podName)
+	}
+
+	postURL :=  path.Join(podIP, "/route/update")
+	jsonVal, _ := json.Marshal(subpaths)
+	resp, err := http.Post(
+		postURL, 
+		"application/json",
+		strings.NewReader(string(jsonVal)),
+	)
+	if err != nil {
+		log.Info("StatusCode is %d:%v", resp.StatusCode, err)
+		return err
+	}
+
+	return nil
+}
+
+func (r *RouteReconciler) CalcDiff(old []sdnv1.SubPath, new []sdnv1.SubPath) (add []sdnv1.SubPath, del []sdnv1.SubPath, update []sdnv1.SubPath) {
+	for _, oldSubpath := range old {
+		found := false
+		for _, newSubpath := range new {
+			if oldSubpath.Name == newSubpath.Name {
+				found = true
+				if oldSubpath.NextIP != newSubpath.NextIP {
+					update = append(update, newSubpath)
+				}
+				break
+			}
+		}
+		if !found {
+			del = append(del, oldSubpath)
+		}
+	}
+
+	for _, newSubpath := range new {
+		found := false
+		for _, oldSubpath := range old {
+			if oldSubpath.Name == newSubpath.Name {
+				found = true
+				break
+			}
+		}
+		if !found {
+			add = append(add, newSubpath)
+		}
+	}
+
+	return
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -59,4 +227,29 @@ func (r *RouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&sdnv1.Route{}).
 		Complete(r)
+}
+
+func GetPodIP(podName string) (string, error) {
+	cmd := exec.Command("kubectl", "get", "pods", "-o", "wide")
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("Executing kubectl get pods failed: %v\n", err)
+	}
+
+	lines := strings.Split(string(output), "\n")[1:]
+	for _, line := range lines {
+		blocks := strings.Split(line, " ")
+		newBlocks := []string{}
+		for _, block := range blocks {
+			if block != "" {
+				newBlocks = append(newBlocks, block)
+			} 
+		}
+		if newBlocks[0] == podName && newBlocks[5] != "<none>"{
+			return newBlocks[5], nil
+		}
+	}
+
+	return "", fmt.Errorf("Can't find pod: %s\n", podName)
 }

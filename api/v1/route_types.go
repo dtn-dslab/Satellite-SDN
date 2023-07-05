@@ -39,6 +39,7 @@ type RouteSpec struct {
 type RouteStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	SubPaths []SubPath `json:"subpaths,omitempty"`
 }
 
 //+kubebuilder:object:root=true
