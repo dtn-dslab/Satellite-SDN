@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: List
+items:
+- apiVersion: sdn.dtn-satellite-sdn/v1
+  metadata:
+    name: sdnone
+  kind: Route
+  spec:
+    subpaths:
+    - name: sdntwo
+      nextip: 128.0.1.1/24
+- apiVersion: sdn.dtn-satellite-sdn/v1
+  metadata:
+   name: sdntwo
+  kind: Route
+  spec:
+    subpaths:
+    - name: sdnone
+      nextip: 128.0.0.1/24

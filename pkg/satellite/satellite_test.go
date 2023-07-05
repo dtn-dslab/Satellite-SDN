@@ -13,7 +13,7 @@ func TestCreateConstellation(t *testing.T) {
 	for _, satellite := range constellation.Satellites {
 		long, lat, alt := satellite.Location()
 		t.Logf("%s: long is %2f, lat is %2f, alt is %2f\n",
-				satellite.Name, long, lat, alt)
+			satellite.Name, long, lat, alt)
 	}
 }
 
@@ -29,7 +29,7 @@ func TestConnection(t *testing.T) {
 			sat2Name := constellation.Satellites[j].Name
 			flag, err := constellation.isConnection(sat1Name, sat2Name)
 			if err != nil {
-				t.Errorf("%v\n",err)
+				t.Errorf("%v\n", err)
 			}
 			if flag {
 				t.Logf("%s and %s: %v\n", sat1Name, sat2Name, flag)

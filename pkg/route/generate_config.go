@@ -31,7 +31,7 @@ func GenerateRouteSummaryFile(nameMap map[int]string, routeTable [][]int, output
 	routeList.APIVersion = "v1"
 	routeList.Kind = "List"
 	for idx1 := range routeTable {
-		route := util.Route {
+		route := util.Route{
 			APIVersion: "v1",
 			MetaData: util.MetaData{
 				Name: nameMap[idx1],
@@ -44,9 +44,9 @@ func GenerateRouteSummaryFile(nameMap map[int]string, routeTable [][]int, output
 		for idx2 := range routeTable[idx1] {
 			if routeTable[idx1][idx2] != -1 {
 				route.Spec.SubPaths = append(
-					route.Spec.SubPaths, 
+					route.Spec.SubPaths,
 					util.SubPath{
-						Name: nameMap[idx2],
+						Name:   nameMap[idx2],
 						NextIP: vxlanIPTable[idx1][idx2],
 					},
 				)

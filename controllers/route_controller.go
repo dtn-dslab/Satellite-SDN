@@ -110,19 +110,25 @@ func (r *RouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 func (r *RouteReconciler) AddSubpaths(ctx context.Context, podName string, subpaths []sdnv1.SubPath) error {
 	log := log.FromContext(ctx)
 
+	// No subpath in subpaths: return nil.
+	if len(subpaths) == 0 {
+		log.Info("No subpath in add.")
+		return nil
+	}
+
 	var podIP string
 	var err error
 	for podIP, err = GetPodIP(podName); err != nil; {
 		log.Info("Retry!")
-		duration := 3000 + rand.Int31() % 2000
+		duration := 3000 + rand.Int31()%2000
 		time.Sleep(time.Duration(duration))
 		podIP, err = GetPodIP(podName)
 	}
 
-	postURL :=  path.Join(podIP, "/route/apply")
+	postURL := path.Join(podIP, "/route/apply")
 	jsonVal, _ := json.Marshal(subpaths)
 	resp, err := http.Post(
-		postURL, 
+		postURL,
 		"application/json",
 		strings.NewReader(string(jsonVal)),
 	)
@@ -134,23 +140,28 @@ func (r *RouteReconciler) AddSubpaths(ctx context.Context, podName string, subpa
 	return nil
 }
 
-
 func (r *RouteReconciler) DelSubpaths(ctx context.Context, podName string, subpaths []sdnv1.SubPath) error {
 	log := log.FromContext(ctx)
+
+	// No subpath in subpaths: return nil.
+	if len(subpaths) == 0 {
+		log.Info("No subpath in del.")
+		return nil
+	}
 
 	var podIP string
 	var err error
 	for podIP, err = GetPodIP(podName); err != nil; {
 		log.Info("Retry!")
-		duration := 3000 + rand.Int31() % 2000
+		duration := 3000 + rand.Int31()%2000
 		time.Sleep(time.Duration(duration))
 		podIP, err = GetPodIP(podName)
 	}
 
-	postURL :=  path.Join(podIP, "/route/del")
+	postURL := path.Join(podIP, "/route/del")
 	jsonVal, _ := json.Marshal(subpaths)
 	resp, err := http.Post(
-		postURL, 
+		postURL,
 		"application/json",
 		strings.NewReader(string(jsonVal)),
 	)
@@ -165,19 +176,25 @@ func (r *RouteReconciler) DelSubpaths(ctx context.Context, podName string, subpa
 func (r *RouteReconciler) UpdateSubpaths(ctx context.Context, podName string, subpaths []sdnv1.SubPath) error {
 	log := log.FromContext(ctx)
 
+	// No subpath in subpaths: return nil.
+	if len(subpaths) == 0 {
+		log.Info("No subpath in update.")
+		return nil
+	}
+
 	var podIP string
 	var err error
 	for podIP, err = GetPodIP(podName); err != nil; {
 		log.Info("Retry!")
-		duration := 3000 + rand.Int31() % 2000
+		duration := 3000 + rand.Int31()%2000
 		time.Sleep(time.Duration(duration))
 		podIP, err = GetPodIP(podName)
 	}
 
-	postURL :=  path.Join(podIP, "/route/update")
+	postURL := path.Join(podIP, "/route/update")
 	jsonVal, _ := json.Marshal(subpaths)
 	resp, err := http.Post(
-		postURL, 
+		postURL,
 		"application/json",
 		strings.NewReader(string(jsonVal)),
 	)
@@ -244,9 +261,9 @@ func GetPodIP(podName string) (string, error) {
 		for _, block := range blocks {
 			if block != "" {
 				newBlocks = append(newBlocks, block)
-			} 
+			}
 		}
-		if newBlocks[0] == podName && newBlocks[5] != "<none>"{
+		if newBlocks[0] == podName && newBlocks[5] != "<none>" {
 			return newBlocks[5], nil
 		}
 	}

@@ -25,7 +25,7 @@ func ComputeRoutes(distanceMap [][]float64, threadNum int) [][]int {
 		go ComputeRouteThread(distanceMap, routeTable, idx, threadNum, &wg)
 	}
 	wg.Wait()
-	
+
 	return routeTable
 }
 
@@ -35,7 +35,7 @@ func ComputeRouteThread(distanceMap [][]float64, routeTable [][]int, threadID in
 	defer wg.Done()
 	nodeCount := len(distanceMap)
 	for idx := threadID; idx < nodeCount; idx += threadNum {
-		// Initialize vector result 
+		// Initialize vector result
 		result, notFound := []float64{}, []float64{}
 		dijkstraPath := [][]int{}
 		for i := 0; i < nodeCount; i++ {

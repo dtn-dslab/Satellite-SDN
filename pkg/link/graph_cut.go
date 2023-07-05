@@ -1,8 +1,8 @@
 package link
 
 import (
-	"sort"
 	"reflect"
+	"sort"
 	// "fmt"
 
 	"ws/dtn-satellite-sdn/pkg/satellite"
@@ -10,7 +10,7 @@ import (
 
 func GraphCutHash(nodeSet []int, expectedSplitsCount int) [][]int {
 	ret := [][]int{}
-	
+
 	for _, nodeId := range nodeSet {
 		idx := nodeId % expectedSplitsCount
 		ret[idx] = append(ret[idx], nodeId)
@@ -29,7 +29,7 @@ func GraphCutLinear(nodeSet []int, edgeSet []satellite.LinkEdge, expectedSplitsC
 	}
 
 	firstIter := true
-	for ; !reflect.DeepEqual(allPartitions, nextPartitions) || firstIter; {
+	for !reflect.DeepEqual(allPartitions, nextPartitions) || firstIter {
 		firstIter = false
 		copy(allPartitions, nextPartitions)
 		// fmt.Println("Iteration!")
@@ -66,7 +66,7 @@ func GraphCutLinear(nodeSet []int, edgeSet []satellite.LinkEdge, expectedSplitsC
 	return nextPartitions
 }
 
-func Partition(curPartitions [][]int, nodeId int, neighbours []int, expectedSplitsCount int, nodeCount int, beta float64) [][]int{
+func Partition(curPartitions [][]int, nodeId int, neighbours []int, expectedSplitsCount int, nodeCount int, beta float64) [][]int {
 	targetIdx, targetScore := -1, -1.0
 	for idx, partition := range curPartitions {
 		// Deleting the same node
@@ -89,7 +89,7 @@ func Partition(curPartitions [][]int, nodeId int, neighbours []int, expectedSpli
 		}
 		// Calculate and update score
 		C := beta * float64(nodeCount) / float64(expectedSplitsCount)
-		weight := float64(1) - float64(len(curPartitions[idx])) / C 
+		weight := float64(1) - float64(len(curPartitions[idx]))/C
 		score := float64(interserctCount) * weight
 		if score > targetScore {
 			targetIdx = idx
@@ -102,7 +102,7 @@ func Partition(curPartitions [][]int, nodeId int, neighbours []int, expectedSpli
 		nextPartitions = append(nextPartitions, []int{})
 	}
 	copy(nextPartitions, curPartitions)
-	nextPartitions[targetIdx] = append(nextPartitions[targetIdx], nodeId) 
+	nextPartitions[targetIdx] = append(nextPartitions[targetIdx], nodeId)
 	return nextPartitions
 }
 

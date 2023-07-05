@@ -3,10 +3,10 @@ package satellite
 import (
 	"fmt"
 	// "log"
+	"io/ioutil"
 	"math"
 	"sort"
 	"strings"
-	"io/ioutil"
 )
 
 const orbitAltDelta float64 = 500
@@ -17,7 +17,7 @@ type Constellation struct {
 
 type LinkEdge struct {
 	From int
-	To int
+	To   int
 }
 
 func NewConstellation(filePath string) (*Constellation, error) {
@@ -27,8 +27,8 @@ func NewConstellation(filePath string) (*Constellation, error) {
 	}
 
 	lines := strings.Split(string(content), "\n")
-	if len(lines) > 0 && lines[len(lines) - 1] == "" {
-		lines = lines[:len(lines) - 1]
+	if len(lines) > 0 && lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
 	}
 
 	var constellation Constellation
@@ -38,7 +38,7 @@ func NewConstellation(filePath string) (*Constellation, error) {
 		name = strings.Replace(name, "(", "", -1)
 		name = strings.Replace(name, ")", "", -1)
 		name = strings.ToLower(name)
-		sat, err := NewStatellite(name, lines[idx + 1], lines[idx + 2])
+		sat, err := NewStatellite(name, lines[idx+1], lines[idx+2])
 		if err != nil {
 			return nil, fmt.Errorf("Error in creating constellation: %v\n", err)
 		}
@@ -83,7 +83,7 @@ func (c *Constellation) isConnection(sat1, sat2 string) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("The second satellite is not in the constellation\n")
 	}
-	
+
 	// Satellites connect with at most 4 neighbour satellites
 	// 1. Same orbit & Closest satellite in positive direction
 	// 2. Same orbit & Closest satellite in negative direction
@@ -95,27 +95,27 @@ func (c *Constellation) isConnection(sat1, sat2 string) (bool, error) {
 	_, _, alt1 := satellite1.Location()
 	_, _, alt2 := satellite2.Location()
 	angleDelta := satellite1.AngleDelta(satellite2)
-	isSameOrbit := math.Abs((alt1 - alt2) / orbitAltDelta) < 1
-	isHigher := alt2 - alt1 > 0
+	isSameOrbit := math.Abs((alt1-alt2)/orbitAltDelta) < 1
+	isHigher := alt2-alt1 > 0
 	isPostiveDir := angleDelta > 0
 	if isSameOrbit && isPostiveDir {
 		for _, sat := range c.Satellites {
 			_, _, tmpAlt := sat.Location()
-			if sat.Name != sat1 && math.Abs((tmpAlt - alt1) / orbitAltDelta) < 1 {
+			if sat.Name != sat1 && math.Abs((tmpAlt-alt1)/orbitAltDelta) < 1 {
 				distancesMap[sat.Name] = satellite1.AngleDelta(sat)
 			}
 		}
 	} else if isSameOrbit && !isPostiveDir {
 		for _, sat := range c.Satellites {
 			_, _, tmpAlt := sat.Location()
-			if sat.Name != sat1 && math.Abs((tmpAlt - alt1) / orbitAltDelta) < 1 {
+			if sat.Name != sat1 && math.Abs((tmpAlt-alt1)/orbitAltDelta) < 1 {
 				distancesMap[sat.Name] = -satellite1.AngleDelta(sat)
 			}
 		}
 	} else if isHigher {
 		for _, sat := range c.Satellites {
 			_, _, tmpAlt := sat.Location()
-			if sat.Name != sat2 && (tmpAlt - alt2) / orbitAltDelta <= -1 {
+			if sat.Name != sat2 && (tmpAlt-alt2)/orbitAltDelta <= -1 {
 				distance, err := c.Distance(sat.Name, sat2)
 				if err != nil {
 					return false, fmt.Errorf("Calculating distance error in function isConnection\n")
@@ -126,7 +126,7 @@ func (c *Constellation) isConnection(sat1, sat2 string) (bool, error) {
 	} else {
 		for _, sat := range c.Satellites {
 			_, _, tmpAlt := sat.Location()
-			if sat.Name != sat1 && (tmpAlt - alt1) / orbitAltDelta <= -1 {
+			if sat.Name != sat1 && (tmpAlt-alt1)/orbitAltDelta <= -1 {
 				distance, err := c.Distance(sat.Name, sat1)
 				if err != nil {
 					return false, fmt.Errorf("Calculating distance error in function isConnection\n")
@@ -138,7 +138,7 @@ func (c *Constellation) isConnection(sat1, sat2 string) (bool, error) {
 
 	// Sort distance from low to high
 	type Pair struct {
-		name string
+		name     string
 		distance float64
 	}
 	pairList := []Pair{}
@@ -185,8 +185,8 @@ func (c *Constellation) GenerateConnGraph() (map[int]string, [][]int) {
 				_, _, alt1 := sat1.Location()
 				_, _, alt2 := sat2.Location()
 				angleDelta := sat1.AngleDelta(sat2)
-				isSameOrbit := math.Abs((alt1 - alt2) / orbitAltDelta) < 1
-				isHigher := alt2 - alt1 > 0
+				isSameOrbit := math.Abs((alt1-alt2)/orbitAltDelta) < 1
+				isHigher := alt2-alt1 > 0
 				isPostiveDir := angleDelta > 0
 
 				if isSameOrbit && isPostiveDir {
@@ -201,7 +201,7 @@ func (c *Constellation) GenerateConnGraph() (map[int]string, [][]int) {
 					if sat1.Distance(sat2) < lowerMinVal {
 						lowerMinVal, lowerMinIdx = sat1.Distance(sat2), idx2
 					}
-				} 
+				}
 			}
 		}
 
@@ -272,4 +272,3 @@ func ConvertConnGraphToEdgeSet(connGraph [][]int) []LinkEdge {
 	}
 	return edgeSet
 }
-

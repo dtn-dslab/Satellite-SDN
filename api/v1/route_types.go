@@ -27,6 +27,7 @@ type SubPath struct {
 
 	NextIP string `json:"nextip,omitempty"`
 }
+
 // RouteSpec defines the desired state of Route
 type RouteSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster

@@ -5,13 +5,12 @@ import (
 	"time"
 	// "log"
 	"math"
-	
-	gosate"github.com/joshuaferrara/go-satellite"
-	
+
+	gosate "github.com/joshuaferrara/go-satellite"
 )
 
 type Satellite struct {
-	Name string
+	Name      string
 	Satellite gosate.Satellite
 }
 
@@ -26,7 +25,7 @@ func NewStatellite(name, line1, line2 string) (*Satellite, error) {
 		return nil, fmt.Errorf("The second line of satellite's TLE is empty\n")
 	}
 	return &Satellite{
-		Name: name,
+		Name:      name,
 		Satellite: gosate.TLEToSat(line1, line2, "wgs84"),
 	}, nil
 }
@@ -34,7 +33,7 @@ func NewStatellite(name, line1, line2 string) (*Satellite, error) {
 // Return the position of satellite expressed by x/y/z
 func (sat *Satellite) Position() (x, y, z float64) {
 	// Declare current time
-	year, month, day, hour, minute, second := 
+	year, month, day, hour, minute, second :=
 		time.Now().Year(),
 		int(time.Now().Month()),
 		time.Now().Day(),
@@ -46,7 +45,7 @@ func (sat *Satellite) Position() (x, y, z float64) {
 		sat.Satellite, year, month,
 		day, hour, minute, second,
 	)
-	// log.Printf("%s: x is %2f, y is %2f, z is %2f\n", 
+	// log.Printf("%s: x is %2f, y is %2f, z is %2f\n",
 	// 	sat.Name, position.X, position.Y, position.Z)
 
 	return position.X, position.Y, position.Z
@@ -55,7 +54,7 @@ func (sat *Satellite) Position() (x, y, z float64) {
 // Return the location of satellite expressed by longitude/latitude/altitude
 func (sat *Satellite) Location() (long, lat, alt float64) {
 	// Declare current time
-	year, month, day, hour, minute, second := 
+	year, month, day, hour, minute, second :=
 		time.Now().Year(),
 		int(time.Now().Month()),
 		time.Now().Day(),
@@ -75,7 +74,7 @@ func (sat *Satellite) Location() (long, lat, alt float64) {
 	// Get satellite's latitude & longtitude & altitude
 	altitude, _, latlong := gosate.ECIToLLA(position, gst)
 	latlong = gosate.LatLongDeg(latlong)
-	// log.Printf("%s: long is %2f, lat is %2f, alt is %2f\n", 
+	// log.Printf("%s: long is %2f, lat is %2f, alt is %2f\n",
 	// 	sat.Name, latlong.Longitude, latlong.Latitude, altitude)
 
 	return latlong.Longitude, latlong.Latitude, altitude
@@ -89,9 +88,9 @@ func (sat *Satellite) Distance(anotherSat Satellite) float64 {
 	// log.Printf("year is %d, month is %d, day is %d, hour is %d, minute is %d, second is %d\n",
 	// 				now.Year(), int(now.Month()), now.Day(), now.Hour(), now.Minute(), now.Second())
 	distance := math.Sqrt(
-		(x2 - x1) * (x2 - x1) + 
-		(y2 - y1) * (y2 - y1) + 
-		(z2 - z1) * (z2 - z1),
+		(x2-x1)*(x2-x1) +
+			(y2-y1)*(y2-y1) +
+			(z2-z1)*(z2-z1),
 	)
 	return distance
 }
@@ -103,10 +102,10 @@ func (sat *Satellite) Angle() float64 {
 	if x > 0 && y > 0 {
 		return math.Atan(y / x)
 	} else if x > 0 && y < 0 {
-		return 2 * math.Pi + math.Atan(y / x)
+		return 2*math.Pi + math.Atan(y/x)
 	} else {
-		return math.Pi + math.Atan(y / x)
-	} 
+		return math.Pi + math.Atan(y/x)
+	}
 }
 
 // Angle(sat2) - Angle(self) in WGS84's x-y plane
@@ -114,9 +113,9 @@ func (sat *Satellite) Angle() float64 {
 func (sat *Satellite) AngleDelta(anotherSat Satellite) float64 {
 	angleDelta := anotherSat.Angle() - sat.Angle()
 	if angleDelta > math.Pi {
-		angleDelta = angleDelta - 2 * math.Pi
+		angleDelta = angleDelta - 2*math.Pi
 	} else if angleDelta <= -math.Pi {
-		angleDelta = 2 * math.Pi + angleDelta
+		angleDelta = 2*math.Pi + angleDelta
 	}
 	return angleDelta
 }

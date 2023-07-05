@@ -2,11 +2,10 @@ package link
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os/exec"
 	"strings"
-	"io/ioutil"
 
-	
 	"gopkg.in/yaml.v3"
 	"ws/dtn-satellite-sdn/pkg/satellite"
 	"ws/dtn-satellite-sdn/pkg/util"
@@ -38,7 +37,7 @@ func GeneratePodSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdge
 	for idx := 0; idx < len(nameMap); idx++ {
 		nodeSet = append(nodeSet, idx)
 	}
-	nodeMap := map[int]string{}	// map: satId -> node
+	nodeMap := map[int]string{} // map: satId -> node
 	partitions := GraphCutLinear(nodeSet, edgeSet, expectedNodeNum)
 	for nodeId, partition := range partitions {
 		for _, satId := range partition {
@@ -50,15 +49,15 @@ func GeneratePodSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdge
 	for idx := 0; idx < len(nameMap); idx++ {
 		pod := util.Pod{
 			APIVersion: "v1",
-			Kind: "Pod",
+			Kind:       "Pod",
 			MetaData: util.MetaData{
 				Name: nameMap[idx],
 			},
 			Spec: util.PodSpec{
 				Containers: []util.Container{
 					{
-						Name: "satellite",
-						Image: "golang:1.21-rc-alpine",
+						Name:            "satellite",
+						Image:           "golang:1.21-rc-alpine",
 						ImagePullPolicy: "IfNotPresent",
 						Ports: []util.ContainerPort{
 							{
@@ -102,7 +101,7 @@ func GenerateLinkSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdg
 		podIntfMap[idx] = 1
 		topologyList.Items = append(topologyList.Items, util.Topology{
 			APIVersion: "y-young.github.io/v1",
-			Kind: "Topology",
+			Kind:       "Topology",
 			MetaData: util.MetaData{
 				Name: nameMap[idx],
 			},
@@ -114,23 +113,23 @@ func GenerateLinkSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdg
 		topologyList.Items[edge.From].Spec.Links = append(
 			topologyList.Items[edge.From].Spec.Links,
 			util.Link{
-				UID: (edge.From << 12) + edge.To,
-				PeerPod: nameMap[edge.To],
+				UID:       (edge.From << 12) + edge.To,
+				PeerPod:   nameMap[edge.To],
 				LocalIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.From]),
-				PeefIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.To]),
-				LocalIP: GenerateIP(uint(edge.From), uint(edge.To), true),
-				PeerIP: GenerateIP(uint(edge.From), uint(edge.To), false),
-			}, 
+				PeefIntf:  fmt.Sprintf("sdneth%d", podIntfMap[edge.To]),
+				LocalIP:   GenerateIP(uint(edge.From), uint(edge.To), true),
+				PeerIP:    GenerateIP(uint(edge.From), uint(edge.To), false),
+			},
 		)
 		topologyList.Items[edge.To].Spec.Links = append(
-			topologyList.Items[edge.To].Spec.Links, 
+			topologyList.Items[edge.To].Spec.Links,
 			util.Link{
-				UID: (edge.From << 12) + edge.To,
-				PeerPod: nameMap[edge.From],
+				UID:       (edge.From << 12) + edge.To,
+				PeerPod:   nameMap[edge.From],
 				LocalIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.To]),
-				PeefIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.From]),
-				LocalIP: GenerateIP(uint(edge.From), uint(edge.To), false),
-				PeerIP: GenerateIP(uint(edge.From), uint(edge.To), true),
+				PeefIntf:  fmt.Sprintf("sdneth%d", podIntfMap[edge.From]),
+				LocalIP:   GenerateIP(uint(edge.From), uint(edge.To), false),
+				PeerIP:    GenerateIP(uint(edge.From), uint(edge.To), true),
 			},
 		)
 		podIntfMap[edge.From]++
@@ -147,13 +146,13 @@ func GenerateLinkSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdg
 	return nil
 }
 
-// IP = uid << 8 | 0x1/0x2 (according to isLower) 
+// IP = uid << 8 | 0x1/0x2 (according to isLower)
 // The highest bit of IP must be 1
 // Can support allocating IP to at most 2048 pods
 func GenerateIP(lowerId, higherId uint, isLower bool) string {
 	uid := (lowerId << 12) + higherId
 	netIP := make([]string, 4)
-	netIP[0] = fmt.Sprint((uid >> 16) & 0xff | 0x80)
+	netIP[0] = fmt.Sprint((uid>>16)&0xff | 0x80)
 	netIP[1] = fmt.Sprint((uid >> 8) & 0xff)
 	netIP[2] = fmt.Sprint(uid & 0xff)
 	if isLower {
@@ -161,6 +160,6 @@ func GenerateIP(lowerId, higherId uint, isLower bool) string {
 	} else {
 		netIP[3] = "2"
 	}
-	
+
 	return strings.Join(netIP, ".") + "/24"
 }
