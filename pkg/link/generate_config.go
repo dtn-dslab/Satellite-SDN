@@ -57,7 +57,7 @@ func GeneratePodSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdge
 				Containers: []util.Container{
 					{
 						Name:            "satellite",
-						Image:           "golang:1.21-rc-alpine",
+						Image:           "electronicwaste/podserver:v1",
 						ImagePullPolicy: "IfNotPresent",
 						Ports: []util.ContainerPort{
 							{
@@ -70,13 +70,6 @@ func GeneratePodSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdge
 									"NET_ADMIN",
 								},
 							},
-						},
-						Command: []string{
-							"/bin/sh",
-							"-c",
-						},
-						Args: []string{
-							"sleep 2000000000000",
 						},
 					},
 				},

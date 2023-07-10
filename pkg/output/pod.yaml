@@ -8,12 +8,7 @@ items:
       spec:
         containers:
             - name: satellite
-              image: golang:1.21-rc-alpine
-              command:
-                - /bin/sh
-                - -c
-              args:
-                - sleep 2000000000000
+              image: electronicwaste/podserver:v1
               ports:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
@@ -30,12 +25,7 @@ items:
       spec:
         containers:
             - name: satellite
-              image: golang:1.21-rc-alpine
-              command:
-                - /bin/sh
-                - -c
-              args:
-                - sleep 2000000000000
+              image: electronicwaste/podserver:v1
               ports:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
@@ -44,7 +34,7 @@ items:
                     add:
                         - NET_ADMIN
         nodeSelector:
-            kubernetes.io/hostname: node1.dtn.lab
+            kubernetes.io/hostname: node2.dtn.lab
     - apiVersion: v1
       metadata:
         name: ajisaiegs
@@ -52,12 +42,7 @@ items:
       spec:
         containers:
             - name: satellite
-              image: golang:1.21-rc-alpine
-              command:
-                - /bin/sh
-                - -c
-              args:
-                - sleep 2000000000000
+              image: electronicwaste/podserver:v1
               ports:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
@@ -74,12 +59,7 @@ items:
       spec:
         containers:
             - name: satellite
-              image: golang:1.21-rc-alpine
-              command:
-                - /bin/sh
-                - -c
-              args:
-                - sleep 2000000000000
+              image: electronicwaste/podserver:v1
               ports:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
@@ -88,7 +68,7 @@ items:
                     add:
                         - NET_ADMIN
         nodeSelector:
-            kubernetes.io/hostname: node2.dtn.lab
+            kubernetes.io/hostname: node3.dtn.lab
     - apiVersion: v1
       metadata:
         name: cosmos2024etalon2
@@ -96,12 +76,7 @@ items:
       spec:
         containers:
             - name: satellite
-              image: golang:1.21-rc-alpine
-              command:
-                - /bin/sh
-                - -c
-              args:
-                - sleep 2000000000000
+              image: electronicwaste/podserver:v1
               ports:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
@@ -118,12 +93,24 @@ items:
       spec:
         containers:
             - name: satellite
-              image: golang:1.21-rc-alpine
-              command:
-                - /bin/sh
-                - -c
-              args:
-                - sleep 2000000000000
+              image: electronicwaste/podserver:v1
+              ports:
+                - containerPort: 8080
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                capabilities:
+                    add:
+                        - NET_ADMIN
+        nodeSelector:
+            kubernetes.io/hostname: node3.dtn.lab
+    - apiVersion: v1
+      metadata:
+        name: stella
+      kind: Pod
+      spec:
+        containers:
+            - name: satellite
+              image: electronicwaste/podserver:v1
               ports:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
@@ -135,39 +122,12 @@ items:
             kubernetes.io/hostname: node2.dtn.lab
     - apiVersion: v1
       metadata:
-        name: stella
-      kind: Pod
-      spec:
-        containers:
-            - name: satellite
-              image: golang:1.21-rc-alpine
-              command:
-                - /bin/sh
-                - -c
-              args:
-                - sleep 2000000000000
-              ports:
-                - containerPort: 8080
-              imagePullPolicy: IfNotPresent
-              securityContext:
-                capabilities:
-                    add:
-                        - NET_ADMIN
-        nodeSelector:
-            kubernetes.io/hostname: node3.dtn.lab
-    - apiVersion: v1
-      metadata:
         name: lares
       kind: Pod
       spec:
         containers:
             - name: satellite
-              image: golang:1.21-rc-alpine
-              command:
-                - /bin/sh
-                - -c
-              args:
-                - sleep 2000000000000
+              image: electronicwaste/podserver:v1
               ports:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
@@ -176,4 +136,4 @@ items:
                     add:
                         - NET_ADMIN
         nodeSelector:
-            kubernetes.io/hostname: node3.dtn.lab
+            kubernetes.io/hostname: node1.dtn.lab
