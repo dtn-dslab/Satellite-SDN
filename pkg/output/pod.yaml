@@ -17,6 +17,10 @@ items:
               ports:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
+              securityContext:
+                capabilities:
+                    add:
+                        - NET_ADMIN
         nodeSelector:
             kubernetes.io/hostname: node1.dtn.lab
     - apiVersion: v1
@@ -35,8 +39,12 @@ items:
               ports:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
+              securityContext:
+                capabilities:
+                    add:
+                        - NET_ADMIN
         nodeSelector:
-            kubernetes.io/hostname: node2.dtn.lab
+            kubernetes.io/hostname: node1.dtn.lab
     - apiVersion: v1
       metadata:
         name: ajisaiegs
@@ -53,6 +61,10 @@ items:
               ports:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
+              securityContext:
+                capabilities:
+                    add:
+                        - NET_ADMIN
         nodeSelector:
             kubernetes.io/hostname: node1.dtn.lab
     - apiVersion: v1
@@ -71,6 +83,10 @@ items:
               ports:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
+              securityContext:
+                capabilities:
+                    add:
+                        - NET_ADMIN
         nodeSelector:
             kubernetes.io/hostname: node2.dtn.lab
     - apiVersion: v1
@@ -89,8 +105,12 @@ items:
               ports:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
+              securityContext:
+                capabilities:
+                    add:
+                        - NET_ADMIN
         nodeSelector:
-            kubernetes.io/hostname: node1.dtn.lab
+            kubernetes.io/hostname: node2.dtn.lab
     - apiVersion: v1
       metadata:
         name: lageos2
@@ -107,8 +127,12 @@ items:
               ports:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
+              securityContext:
+                capabilities:
+                    add:
+                        - NET_ADMIN
         nodeSelector:
-            kubernetes.io/hostname: node3.dtn.lab
+            kubernetes.io/hostname: node2.dtn.lab
     - apiVersion: v1
       metadata:
         name: stella
@@ -125,6 +149,10 @@ items:
               ports:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
+              securityContext:
+                capabilities:
+                    add:
+                        - NET_ADMIN
         nodeSelector:
             kubernetes.io/hostname: node3.dtn.lab
     - apiVersion: v1
@@ -143,5 +171,9 @@ items:
               ports:
                 - containerPort: 8080
               imagePullPolicy: IfNotPresent
+              securityContext:
+                capabilities:
+                    add:
+                        - NET_ADMIN
         nodeSelector:
-            kubernetes.io/hostname: node2.dtn.lab
+            kubernetes.io/hostname: node3.dtn.lab

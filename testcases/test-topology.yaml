@@ -4,7 +4,7 @@ items:
 - apiVersion: y-young.github.io/v1
   kind: Topology
   metadata:
-    name: lageos-1
+    name: lageos1
   spec:
     links:
     - uid: 111111
@@ -24,4 +24,4 @@ items:
       local_ip: 12.12.12.2/24
       peer_intf: test-1
       peer_intf: 12.12.12.1/24
-      peer_pod: lageos-1
+      peer_pod: lageos1

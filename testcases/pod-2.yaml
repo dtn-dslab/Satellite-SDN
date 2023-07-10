@@ -5,7 +5,7 @@ metadata:
 spec:
   containers:
   - name: sdn2
-    image: golang:latest
+    image: golang:1.21-rc-alpine
     imagePullPolicy: IfNotPresent
     ports:
     - containerPort: 8080
@@ -13,4 +13,4 @@ spec:
     args: ["sleep 2000000000000"]
   
   nodeSelector:
-    kubernetes.io/hostname: node1.dtn.lab
+    kubernetes.io/hostname: node2.dtn.lab

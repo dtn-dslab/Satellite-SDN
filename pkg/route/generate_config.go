@@ -32,7 +32,7 @@ func GenerateRouteSummaryFile(nameMap map[int]string, routeTable [][]int, output
 	routeList.Kind = "List"
 	for idx1 := range routeTable {
 		route := util.Route{
-			APIVersion: "v1",
+			APIVersion: "sdn.dtn-satellite-sdn/v1",
 			MetaData: util.MetaData{
 				Name: nameMap[idx1],
 			},

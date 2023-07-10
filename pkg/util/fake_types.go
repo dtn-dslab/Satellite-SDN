@@ -10,6 +10,25 @@ type ContainerPort struct {
 	ContainerPort int32 `json:"containerPort" yaml:"containerPort"`
 }
 
+type Capability string
+
+type Capabilities struct {
+	// Added capabilities
+	// +optional
+	Add []Capability `json:"add,omitempty" yaml:"add,omitempty"`
+	// Removed capabilities
+	// +optional
+	Drop []Capability `json:"drop,omitempty" yaml:"drop,omitempty"`
+}
+
+type SecurityContext struct {
+	// The capabilities to add/drop when running containers.
+	// Defaults to the default set of capabilities granted by the container runtime.
+	// Note that this field cannot be set when spec.os.name is windows.
+	// +optional
+	Capabilities Capabilities `json:"capabilities" yaml:"capabilities"`
+}
+
 type Container struct {
 	Name string `json:"name" yaml:"name"`
 
@@ -22,6 +41,8 @@ type Container struct {
 	Ports []ContainerPort `json:"ports" yaml:"ports"`
 
 	ImagePullPolicy string `json:"imagePullPolicy" yaml:"imagePullPolicy"`
+
+	SecurityContext SecurityContext `json:"securityContext" yaml:"securityContext"`
 }
 
 type PodSpec struct {

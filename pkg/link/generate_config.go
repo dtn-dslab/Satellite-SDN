@@ -64,6 +64,13 @@ func GeneratePodSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdge
 								ContainerPort: 8080,
 							},
 						},
+						SecurityContext: util.SecurityContext{
+							Capabilities: util.Capabilities{
+								Add: []util.Capability{
+									"NET_ADMIN",
+								},
+							},
+						},
 						Command: []string{
 							"/bin/sh",
 							"-c",

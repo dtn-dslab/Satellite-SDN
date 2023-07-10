@@ -5,7 +5,7 @@ metadata:
 spec:
   containers:
   - name: sdn1
-    image: golang:latest
+    image: alpine
     imagePullPolicy: IfNotPresent
     ports:
     - containerPort: 8080
