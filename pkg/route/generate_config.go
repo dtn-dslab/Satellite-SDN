@@ -47,7 +47,8 @@ func GenerateRouteSummaryFile(nameMap map[int]string, routeTable [][]int, output
 					route.Spec.SubPaths,
 					util.SubPath{
 						Name:   nameMap[idx2],
-						NextIP: vxlanIPTable[idx1][idx2],
+						TargetIP: vxlanIPTable[idx1][idx2],
+						NextIP: vxlanIPTable[idx1][routeTable[idx1][idx2]],
 					},
 				)
 			}

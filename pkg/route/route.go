@@ -79,8 +79,10 @@ func ComputeRouteThread(distanceMap [][]float64, routeTable [][]int, threadID in
 		// Udpate routeTable
 		for i := 0; i < nodeCount; i++ {
 			if len(dijkstraPath[i]) != 0 {
+				// Record the next hop's idx
 				routeTable[idx][i] = dijkstraPath[i][0]
 			} else {
+				// Means that they connect to each other directly.
 				routeTable[idx][i] = -1
 			}
 		}

@@ -116,6 +116,7 @@ func (r *RouteReconciler) AddSubpaths(ctx context.Context, podName string, subpa
 		return nil
 	}
 
+	// Get pod's ip by invoking `GetPodIP` func periodically
 	var podIP string
 	var err error
 	for podIP, err = GetPodIP(podName); err != nil; {
@@ -149,6 +150,7 @@ func (r *RouteReconciler) DelSubpaths(ctx context.Context, podName string, subpa
 		return nil
 	}
 
+	// Get pod's ip by invoking `GetPodIP` func periodically
 	var podIP string
 	var err error
 	for podIP, err = GetPodIP(podName); err != nil; {
@@ -182,6 +184,7 @@ func (r *RouteReconciler) UpdateSubpaths(ctx context.Context, podName string, su
 		return nil
 	}
 
+	// Get pod's ip by invoking `GetPodIP` func periodically
 	var podIP string
 	var err error
 	for podIP, err = GetPodIP(podName); err != nil; {
@@ -206,14 +209,22 @@ func (r *RouteReconciler) UpdateSubpaths(ctx context.Context, podName string, su
 	return nil
 }
 
+// This function will calculate the differences between old subpaths and new subpaths, 
+// and return three subpath arrays: 
+// 1. add for new subpaths
+// 2. del for subpaths that need to be deleted
+// 3. update for supaths that need to be updated(nextip changed)
 func (r *RouteReconciler) CalcDiff(old []sdnv1.SubPath, new []sdnv1.SubPath) (add []sdnv1.SubPath, del []sdnv1.SubPath, update []sdnv1.SubPath) {
 	for _, oldSubpath := range old {
 		found := false
 		for _, newSubpath := range new {
 			if oldSubpath.Name == newSubpath.Name {
 				found = true
-				if oldSubpath.NextIP != newSubpath.NextIP {
+				if oldSubpath.NextIP != newSubpath.NextIP{
 					update = append(update, newSubpath)
+				} else if oldSubpath.TargetIP != newSubpath.TargetIP {
+					del = append(del, oldSubpath)
+					add = append(add, newSubpath)
 				}
 				break
 			}
@@ -246,6 +257,7 @@ func (r *RouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+// Get a pod's ip via `kubectl get pods -o wide` instruction by parsing the output.
 func GetPodIP(podName string) (string, error) {
 	cmd := exec.Command("kubectl", "get", "pods", "-o", "wide")
 

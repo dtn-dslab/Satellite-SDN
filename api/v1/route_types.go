@@ -25,6 +25,8 @@ import (
 type SubPath struct {
 	Name string `json:"name,omitempty"`
 
+	TargetIP string `json:"targetip,omitempty"`
+
 	NextIP string `json:"nextip,omitempty"`
 }
 

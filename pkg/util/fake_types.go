@@ -108,6 +108,8 @@ type TopologyList struct {
 type SubPath struct {
 	Name string `json:"name" yaml:"name"`
 
+	TargetIP string `json:"targetip" yaml:"targetip"`
+
 	NextIP string `json:"nextip" yaml:"nextip"`
 }
 
