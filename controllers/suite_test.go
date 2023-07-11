@@ -78,11 +78,3 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
-
-func TestGetIP(t *testing.T) {
-	ip, err := GetPodIP("dtn-satellite-sdn")
-	if err != nil {
-		t.Errorf("Get podIP error: %v", err)
-	}
-	t.Logf("podIP is: %s\n", ip)
-}

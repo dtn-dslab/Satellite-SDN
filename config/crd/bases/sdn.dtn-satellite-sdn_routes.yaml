@@ -35,6 +35,10 @@ spec:
           spec:
             description: RouteSpec defines the desired state of Route
             properties:
+              podip:
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file'
+                type: string
               subpaths:
                 items:
                   description: 'EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!

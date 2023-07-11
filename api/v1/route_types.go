@@ -34,6 +34,7 @@ type SubPath struct {
 type RouteSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	PodIP string `json:"podip,omitempty"`
 
 	SubPaths []SubPath `json:"subpaths,omitempty"`
 }
