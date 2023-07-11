@@ -122,11 +122,11 @@ func (r *RouteReconciler) AddSubpaths(ctx context.Context, podName string, subpa
 	for podIP, err = GetPodIP(podName); err != nil; {
 		log.Info("Retry!")
 		duration := 3000 + rand.Int31()%2000
-		time.Sleep(time.Duration(duration))
+		time.Sleep(time.Duration(duration) * time.Millisecond)
 		podIP, err = GetPodIP(podName)
 	}
 
-	postURL := path.Join(podIP, "/route/apply")
+	postURL := path.Join(podIP+":8080", "/route/apply")
 	jsonVal, _ := json.Marshal(subpaths)
 	resp, err := http.Post(
 		postURL,
@@ -156,11 +156,11 @@ func (r *RouteReconciler) DelSubpaths(ctx context.Context, podName string, subpa
 	for podIP, err = GetPodIP(podName); err != nil; {
 		log.Info("Retry!")
 		duration := 3000 + rand.Int31()%2000
-		time.Sleep(time.Duration(duration))
+		time.Sleep(time.Duration(duration) * time.Millisecond)
 		podIP, err = GetPodIP(podName)
 	}
 
-	postURL := path.Join(podIP, "/route/del")
+	postURL := path.Join(podIP+":8080", "/route/del")
 	jsonVal, _ := json.Marshal(subpaths)
 	resp, err := http.Post(
 		postURL,
@@ -190,11 +190,11 @@ func (r *RouteReconciler) UpdateSubpaths(ctx context.Context, podName string, su
 	for podIP, err = GetPodIP(podName); err != nil; {
 		log.Info("Retry!")
 		duration := 3000 + rand.Int31()%2000
-		time.Sleep(time.Duration(duration))
+		time.Sleep(time.Duration(duration) * time.Millisecond)
 		podIP, err = GetPodIP(podName)
 	}
 
-	postURL := path.Join(podIP, "/route/update")
+	postURL := path.Join(podIP+":8080", "/route/update")
 	jsonVal, _ := json.Marshal(subpaths)
 	resp, err := http.Post(
 		postURL,
@@ -209,8 +209,8 @@ func (r *RouteReconciler) UpdateSubpaths(ctx context.Context, podName string, su
 	return nil
 }
 
-// This function will calculate the differences between old subpaths and new subpaths, 
-// and return three subpath arrays: 
+// This function will calculate the differences between old subpaths and new subpaths,
+// and return three subpath arrays:
 // 1. add for new subpaths
 // 2. del for subpaths that need to be deleted
 // 3. update for supaths that need to be updated(nextip changed)
@@ -220,7 +220,7 @@ func (r *RouteReconciler) CalcDiff(old []sdnv1.SubPath, new []sdnv1.SubPath) (ad
 		for _, newSubpath := range new {
 			if oldSubpath.Name == newSubpath.Name {
 				found = true
-				if oldSubpath.NextIP != newSubpath.NextIP{
+				if oldSubpath.NextIP != newSubpath.NextIP {
 					update = append(update, newSubpath)
 				} else if oldSubpath.TargetIP != newSubpath.TargetIP {
 					del = append(del, oldSubpath)

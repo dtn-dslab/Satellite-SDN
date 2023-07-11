@@ -57,7 +57,7 @@ func GeneratePodSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdge
 				Containers: []util.Container{
 					{
 						Name:            "satellite",
-						Image:           "electronicwaste/podserver:v1",
+						Image:           "electronicwaste/podserver:v2",
 						ImagePullPolicy: "IfNotPresent",
 						Ports: []util.ContainerPort{
 							{
