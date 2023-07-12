@@ -57,7 +57,7 @@ func GeneratePodSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdge
 				Containers: []util.Container{
 					{
 						Name:            "satellite",
-						Image:           "electronicwaste/podserver:v2",
+						Image:           "electronicwaste/podserver:v3",
 						ImagePullPolicy: "IfNotPresent",
 						Ports: []util.ContainerPort{
 							{
@@ -117,8 +117,8 @@ func GenerateLinkSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdg
 				PeerPod:   nameMap[edge.To],
 				LocalIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.From]),
 				PeefIntf:  fmt.Sprintf("sdneth%d", podIntfMap[edge.To]),
-				LocalIP:   GenerateIP(uint(edge.From), uint(edge.To), true),
-				PeerIP:    GenerateIP(uint(edge.From), uint(edge.To), false),
+				LocalIP:   GenerateIP(uint(edge.From)),
+				PeerIP:    GenerateIP(uint(edge.To)),
 			},
 		)
 		topologyList.Items[edge.To].Spec.Links = append(
@@ -128,8 +128,8 @@ func GenerateLinkSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdg
 				PeerPod:   nameMap[edge.From],
 				LocalIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.To]),
 				PeefIntf:  fmt.Sprintf("sdneth%d", podIntfMap[edge.From]),
-				LocalIP:   GenerateIP(uint(edge.From), uint(edge.To), false),
-				PeerIP:    GenerateIP(uint(edge.From), uint(edge.To), true),
+				LocalIP:   GenerateIP(uint(edge.To)),
+				PeerIP:    GenerateIP(uint(edge.From)),
 			},
 		)
 		podIntfMap[edge.From]++
@@ -146,20 +146,16 @@ func GenerateLinkSummaryFile(nameMap map[int]string, edgeSet []satellite.LinkEdg
 	return nil
 }
 
-// IP = uid << 8 | 0x1/0x2 (according to isLower)
+// IP = 0x80000000 | id
 // The highest bit of IP must be 1
-// Can support allocating IP to at most 2048 pods
-func GenerateIP(lowerId, higherId uint, isLower bool) string {
-	uid := (lowerId << 12) + higherId
+// Can support allocating IP to at most 2 ^ 16 pods
+func GenerateIP(id uint) string {
+	id = id + 1
 	netIP := make([]string, 4)
-	netIP[0] = fmt.Sprint((uid>>16)&0xff | 0x80)
-	netIP[1] = fmt.Sprint((uid >> 8) & 0xff)
-	netIP[2] = fmt.Sprint(uid & 0xff)
-	if isLower {
-		netIP[3] = "1"
-	} else {
-		netIP[3] = "2"
-	}
+	netIP[0] = fmt.Sprint((id >> 24) & 0xff | 0x80)
+	netIP[1] = fmt.Sprint((id >> 16) & 0xff)
+	netIP[2] = fmt.Sprint((id >> 8) & 0xff)
+	netIP[3] = fmt.Sprint(id & 0xff)
 
-	return strings.Join(netIP, ".") + "/24"
+	return strings.Join(netIP, ".") + "/32"
 }

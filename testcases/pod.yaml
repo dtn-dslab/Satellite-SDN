@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: PodList
+items:
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    name: sdnone
+  spec:
+    containers:
+    - name: sdn1
+      image: alpine
+      imagePullPolicy: IfNotPresent
+      ports:
+      - containerPort: 8080
+      command: ["/bin/sh", "-c"]
+      args: ["sleep 2000000000000"]
+    nodeSelector:
+      kubernetes.io/hostname: node1.dtn.lab
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    name: sdntwo
+  spec:
+    containers:
+    - name: sdn2
+      image: golang:1.21-rc-alpine
+      imagePullPolicy: IfNotPresent
+      ports:
+      - containerPort: 8080
+      command: ["/bin/sh", "-c"]
+      args: ["sleep 2000000000000"]
+    nodeSelector:
+      kubernetes.io/hostname: node2.dtn.lab

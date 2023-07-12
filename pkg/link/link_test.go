@@ -28,9 +28,9 @@ func TestGeneratePodYaml(t *testing.T) {
 }
 
 func TestGenerateIP(t *testing.T) {
-	ip := GenerateIP(1, 2, true)
+	ip := GenerateIP(1)
 	t.Logf("IP is %s\n", ip)
-	if ip != "128.16.2.1/24" {
+	if ip != "128.0.0.1/32" {
 		t.Errorf("IP Dismatch!\n")
 	}
 }

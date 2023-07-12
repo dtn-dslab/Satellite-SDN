@@ -127,12 +127,13 @@ func (r *RouteReconciler) AddSubpaths(ctx context.Context, podIP string, subpath
 		"application/json",
 		strings.NewReader(string(jsonVal)),
 	)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		log.Info("Add subpaths failed", "StatusCode", resp.StatusCode, "PostURL", postURL, "Error", err)
-		return err
+	if err != nil {
+		log.Info("Post Error", "PostURL", postURL, "Error", err)
+	} else if resp != nil && resp.StatusCode != http.StatusOK {
+		log.Info("Add subpaths failed", "StatusCode", resp.StatusCode, "PostURL", postURL)
 	}
 
-	return nil
+	return err
 }
 
 func (r *RouteReconciler) DelSubpaths(ctx context.Context, podIP string, subpaths []sdnv1.SubPath) error {
@@ -160,12 +161,13 @@ func (r *RouteReconciler) DelSubpaths(ctx context.Context, podIP string, subpath
 		"application/json",
 		strings.NewReader(string(jsonVal)),
 	)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		log.Info("Delete subpaths failed", "StatusCode", resp.StatusCode, "PostURL", postURL, "Error", err)
-		return err
+	if err != nil {
+		log.Info("Post Error", "PostURL", postURL, "Error", err)
+	} else if resp != nil && resp.StatusCode != http.StatusOK {
+		log.Info("Delete subpaths failed", "StatusCode", resp.StatusCode, "PostURL", postURL)
 	}
 
-	return nil
+	return err
 }
 
 func (r *RouteReconciler) UpdateSubpaths(ctx context.Context, podIP string, subpaths []sdnv1.SubPath) error {
@@ -193,12 +195,13 @@ func (r *RouteReconciler) UpdateSubpaths(ctx context.Context, podIP string, subp
 		"application/json",
 		strings.NewReader(string(jsonVal)),
 	)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		log.Info("Update subpaths failed", "StatusCode", resp.StatusCode, "PostURL", postURL, "Error", err)
-		return err
+	if err != nil {
+		log.Info("Post Error", "PostURL", postURL, "Error", err)
+	} else if resp != nil && resp.StatusCode != http.StatusOK {
+		log.Info("Add subpaths failed", "StatusCode", resp.StatusCode, "PostURL", postURL)
 	}
 
-	return nil
+	return err
 }
 
 // This function will calculate the differences between old subpaths and new subpaths,
