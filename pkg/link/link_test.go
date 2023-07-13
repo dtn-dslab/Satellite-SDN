@@ -6,31 +6,55 @@ import (
 	"ws/dtn-satellite-sdn/pkg/satellite"
 )
 
-func TestCutGraph(t *testing.T) {
-	nodeSet := []int{1, 2, 3, 4, 5, 6, 7}
-	edgeSet := []satellite.LinkEdge{{1, 2}, {1, 3}, {1, 4}, {2, 3}, {2, 4}, {3, 4}, {4, 5}, {5, 6}, {5, 7}, {6, 7}}
-	expectedSplitsCount := 3
-	graph := GraphCutLinear(nodeSet, edgeSet, expectedSplitsCount)
-	t.Logf("%v\n", graph)
-	edgesAcrossSubgraphs := ComputeEdgesAcrossSubgraphs(nodeSet, edgeSet, graph)
-	t.Logf("%v\n", edgesAcrossSubgraphs)
-}
-
-func TestGeneratePodYaml(t *testing.T) {
+func TestConnection(t *testing.T) {
 	constellation, err := satellite.NewConstellation("../data/geodetic.txt")
 	if err != nil {
-		t.Error(err)
+		t.Errorf("%v\n", err)
 	}
 
-	nameMap, connGraph := constellation.GenerateConnGraph()
-	edgeSet := satellite.ConvertConnGraphToEdgeSet(connGraph)
-	GeneratePodSummaryFile(nameMap, edgeSet, "../output/pod.yaml", 3)
+	for i := 0; i < len(constellation.Satellites); i++ {
+		sat1Name := constellation.Satellites[i].Name
+		for j := i + 1; j < len(constellation.Satellites); j++ {
+			sat2Name := constellation.Satellites[j].Name
+			flag, err := isConnection(constellation, sat1Name, sat2Name)
+			if err != nil {
+				t.Errorf("%v\n", err)
+			}
+			if flag {
+				t.Logf("%s and %s: %v\n", sat1Name, sat2Name, flag)
+			}
+		}
+	}
+}
+
+func TestGenerateEdgeSet(t *testing.T) {
+	constellation, err := satellite.NewConstellation("../data/geodetic.txt")
+	if err != nil {
+		t.Errorf("%v\n", err)
+	}
+
+	nameMap, connGraph := GenerateConnGraph(constellation)
+	edgeSet := ConvertConnGraphToEdgeSet(connGraph)
+	t.Logf("NameMap: %v\n", nameMap)
+	t.Logf("EdgeSet: %v\n", edgeSet)
+}
+
+func TestGenerateDistanceMap(t *testing.T) {
+	constellation, err := satellite.NewConstellation("../data/geodetic.txt")
+	if err != nil {
+		t.Errorf("%v\n", err)
+	}
+
+	nameMap, connGraph := GenerateConnGraph(constellation)
+	distanceMap := GenerateDistanceMap(constellation, connGraph)
+	t.Logf("NameMap: %v\n", nameMap)
+	t.Logf("DistanceMap: %v\n", distanceMap)
 }
 
 func TestGenerateIP(t *testing.T) {
 	ip := GenerateIP(1)
 	t.Logf("IP is %s\n", ip)
-	if ip != "128.0.0.1/32" {
+	if ip != "128.0.0.2/32" {
 		t.Errorf("IP Dismatch!\n")
 	}
 }
@@ -41,8 +65,8 @@ func TestGenerateLinkYaml(t *testing.T) {
 		t.Error(err)
 	}
 
-	nameMap, connGraph := constellation.GenerateConnGraph()
-	edgeSet := satellite.ConvertConnGraphToEdgeSet(connGraph)
+	nameMap, connGraph := GenerateConnGraph(constellation)
+	edgeSet := ConvertConnGraphToEdgeSet(connGraph)
 	err = GenerateLinkSummaryFile(nameMap, edgeSet, "../output/topology.yaml")
 	if err != nil {
 		t.Error(err)

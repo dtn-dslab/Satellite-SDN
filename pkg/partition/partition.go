@@ -1,11 +1,11 @@
-package link
+package partition
 
 import (
 	"reflect"
 	"sort"
 	// "fmt"
 
-	"ws/dtn-satellite-sdn/pkg/satellite"
+	"ws/dtn-satellite-sdn/pkg/link"
 )
 
 func GraphCutHash(nodeSet []int, expectedSplitsCount int) [][]int {
@@ -19,7 +19,7 @@ func GraphCutHash(nodeSet []int, expectedSplitsCount int) [][]int {
 	return ret
 }
 
-func GraphCutLinear(nodeSet []int, edgeSet []satellite.LinkEdge, expectedSplitsCount int) [][]int {
+func GraphCutLinear(nodeSet []int, edgeSet []link.LinkEdge, expectedSplitsCount int) [][]int {
 	nodeCount, beta := len(nodeSet), 1.0
 	// fmt.Println("nodeCount is ", nodeCount)
 	allPartitions, nextPartitions := [][]int{}, [][]int{}
@@ -106,8 +106,8 @@ func Partition(curPartitions [][]int, nodeId int, neighbours []int, expectedSpli
 	return nextPartitions
 }
 
-func ComputeEdgesAcrossSubgraphs(nodeSet []int, edgeSet []satellite.LinkEdge, partitions [][]int) []satellite.LinkEdge {
-	ret := []satellite.LinkEdge{}
+func ComputeEdgesAcrossSubgraphs(nodeSet []int, edgeSet []link.LinkEdge, partitions [][]int) []link.LinkEdge {
+	ret := []link.LinkEdge{}
 	for _, edge := range edgeSet {
 		flag1, flag2 := false, false
 		for _, partition := range partitions {

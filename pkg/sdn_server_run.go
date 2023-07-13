@@ -5,8 +5,10 @@ import (
 	"log"
 	"os/exec"
 	"path"
+
 	"ws/dtn-satellite-sdn/pkg/link"
 	"ws/dtn-satellite-sdn/pkg/route"
+	"ws/dtn-satellite-sdn/pkg/partition"
 	"ws/dtn-satellite-sdn/pkg/satellite"
 )
 
@@ -18,14 +20,14 @@ func ApplyConfig(inputFilePath, outputDir string, availableNodeNum int) error {
 	}
 
 	// Generate connGraph & edgeSet to construct pod & topology file
-	nameMap, connGraph := constellation.GenerateConnGraph()
-	edgeSet := satellite.ConvertConnGraphToEdgeSet(connGraph)
-	distanceMap := constellation.GenerateDistanceMap(connGraph)
+	nameMap, connGraph := link.GenerateConnGraph(constellation)
+	edgeSet := link.ConvertConnGraphToEdgeSet(connGraph)
+	distanceMap := link.GenerateDistanceMap(constellation, connGraph)
 	podOutputPath := path.Join(outputDir, "pod.yaml")
 	topoOutputPath := path.Join(outputDir, "topology.yaml")
 
 	log.Println("Generating pod yaml...")
-	err = link.GeneratePodSummaryFile(nameMap, edgeSet, podOutputPath, availableNodeNum)
+	err = partition.GeneratePodSummaryFile(nameMap, edgeSet, podOutputPath, availableNodeNum)
 	if err != nil {
 		return fmt.Errorf("Generating pod yaml failed: %v\n", err)
 	}
