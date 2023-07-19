@@ -36,7 +36,7 @@ func RunSatelliteSDN(inputFilePath string, expectedNodeNum int, timeout int) err
 	if err != nil {
 		return fmt.Errorf("Generate satellite config error: %v\n", err)
 	}
-	if err := RunSDN(nameMap, edgeSet, routeTable, expectedNodeNum); err != nil {
+	if err := CreateSDN(nameMap, edgeSet, routeTable, expectedNodeNum); err != nil {
 		return fmt.Errorf("Initialize satellite SDN failed: %v\n", err)
 	}
 
