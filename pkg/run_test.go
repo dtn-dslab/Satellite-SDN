@@ -2,11 +2,16 @@ package sdn
 
 import "testing"
 
-func TestRunWithoutTimeout(t *testing.T) {
+func TestRunSDNWithoutTimeout(t *testing.T) {
 	inputFilePath := "./data/geodetic.txt"
-	outputDir := "./output"
-	err := ApplyConfig(inputFilePath, outputDir, 3)
-	if err != nil {
+	if err := RunSatelliteSDN(inputFilePath, 3, -1); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestDelSDN(t *testing.T) {
+	inputFilePath := "./data/geodetic.txt"
+	if err := DelSatelliteSDN(inputFilePath); err != nil {
 		t.Error(err)
 	}
 }

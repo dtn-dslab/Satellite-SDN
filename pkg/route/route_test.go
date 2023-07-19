@@ -12,7 +12,8 @@ func TestComputeRoutes(t *testing.T) {
 		t.Errorf("%v\n", err)
 	}
 
-	nameMap, connGraph := link.GenerateConnGraph(constellation)
+	nameMap := constellation.GetNameMap()
+	connGraph := link.GenerateConnGraph(constellation)
 	edgeSet := link.ConvertConnGraphToEdgeSet(connGraph)
 	distanceMap := link.GenerateDistanceMap(constellation, connGraph)
 	t.Logf("NameMap: %v\n", nameMap)

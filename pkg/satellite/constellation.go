@@ -78,3 +78,10 @@ func (c *Constellation) Distance(sat1Name, sat2Name string) (float64, error) {
 	return satellite1.Distance(satellite2), nil
 }
 
+func (c *Constellation) GetNameMap() map[int]string {
+	nameMap := map[int]string{}
+	for idx, satellite := range c.Satellites {
+		nameMap[idx] = satellite.Name
+	}
+	return nameMap
+}

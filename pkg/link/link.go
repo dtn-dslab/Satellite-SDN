@@ -98,14 +98,10 @@ func isConnection(c *satellite.Constellation, sat1, sat2 string) (bool, error) {
 	}
 }
 
-// Return nameMap:int->string and edgeSet
-func GenerateConnGraph(c *satellite.Constellation) (map[int]string, [][]int) {
+// Return and connGraph
+func GenerateConnGraph(c *satellite.Constellation) ([][]int) {
 	// Initialize nameMap and connGraph
 	nodeCount := len(c.Satellites)
-	nameMap := map[int]string{}
-	for idx, satellite := range c.Satellites {
-		nameMap[idx] = satellite.Name
-	}
 	connGraph := [][]int{}
 	for i := 0; i < nodeCount; i++ {
 		tmpArr := []int{}
@@ -158,7 +154,7 @@ func GenerateConnGraph(c *satellite.Constellation) (map[int]string, [][]int) {
 		}
 	}
 
-	return nameMap, connGraph
+	return connGraph
 }
 
 func GenerateDistanceMap(c *satellite.Constellation, connGraph [][]int) [][]float64 {

@@ -33,9 +33,9 @@ func TestGenerateEdgeSet(t *testing.T) {
 		t.Errorf("%v\n", err)
 	}
 
-	nameMap, connGraph := GenerateConnGraph(constellation)
+	connGraph := GenerateConnGraph(constellation)
 	edgeSet := ConvertConnGraphToEdgeSet(connGraph)
-	t.Logf("NameMap: %v\n", nameMap)
+	t.Logf("NameMap: %v\n", constellation.GetNameMap())
 	t.Logf("EdgeSet: %v\n", edgeSet)
 }
 
@@ -45,9 +45,9 @@ func TestGenerateDistanceMap(t *testing.T) {
 		t.Errorf("%v\n", err)
 	}
 
-	nameMap, connGraph := GenerateConnGraph(constellation)
+	connGraph := GenerateConnGraph(constellation)
 	distanceMap := GenerateDistanceMap(constellation, connGraph)
-	t.Logf("NameMap: %v\n", nameMap)
+	t.Logf("NameMap: %v\n", constellation.GetNameMap())
 	t.Logf("DistanceMap: %v\n", distanceMap)
 }
 
@@ -65,7 +65,8 @@ func TestGenerateLinkYaml(t *testing.T) {
 		t.Error(err)
 	}
 
-	nameMap, connGraph := GenerateConnGraph(constellation)
+	nameMap := constellation.GetNameMap()
+	connGraph := GenerateConnGraph(constellation)
 	edgeSet := ConvertConnGraphToEdgeSet(connGraph)
 	err = GenerateLinkSummaryFile(nameMap, edgeSet, "../output/topology.yaml")
 	if err != nil {
