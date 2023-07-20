@@ -59,12 +59,19 @@ func GeneratePodSummaryFile(nameMap map[int]string, edgeSet []link.LinkEdge, out
 				Containers: []util.Container{
 					{
 						Name:            "satellite",
-						Image:           "electronicwaste/podserver:v3",
+						Image:           "electronicwaste/podserver:v4",
 						ImagePullPolicy: "IfNotPresent",
 						Ports: []util.ContainerPort{
 							{
 								ContainerPort: 8080,
 							},
+						},
+						Command: []string {
+							"/bin/sh",
+							"-c",
+						},
+						Args: []string {
+							fmt.Sprintf("ifconfig eth0:sdneth0 %s netmask 255.255.255.255 up;/podserver", util.GetGlobalIP(uint(idx))),
 						},
 						SecurityContext: util.SecurityContext{
 							Capabilities: util.Capabilities{

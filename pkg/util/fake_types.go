@@ -34,9 +34,9 @@ type Container struct {
 
 	Image string `json:"image" yaml:"image"`
 
-	// Command []string `json:"command" yaml:"command"`
+	Command []string `json:"command" yaml:"command"`
 
-	// Args []string `json:"args" yaml:"args"`
+	Args []string `json:"args" yaml:"args"`
 
 	Ports []ContainerPort `json:"ports" yaml:"ports"`
 

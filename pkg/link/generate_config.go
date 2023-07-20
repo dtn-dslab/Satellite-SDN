@@ -3,7 +3,6 @@ package link
 import (
 	"fmt"
 	"io/ioutil"
-	"strings"
 
 	"gopkg.in/yaml.v3"
 	"ws/dtn-satellite-sdn/pkg/util"
@@ -35,8 +34,8 @@ func GenerateLinkSummaryFile(nameMap map[int]string, edgeSet []LinkEdge, outputP
 				PeerPod:   nameMap[edge.To],
 				LocalIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.From]),
 				PeefIntf:  fmt.Sprintf("sdneth%d", podIntfMap[edge.To]),
-				LocalIP:   GenerateIP(uint(edge.From)),
-				PeerIP:    GenerateIP(uint(edge.To)),
+				LocalIP:   util.GetVxlanIP(uint(edge.From), uint(edge.To)),
+				PeerIP:    util.GetVxlanIP(uint(edge.To), uint(edge.From)),
 			},
 		)
 		topologyList.Items[edge.To].Spec.Links = append(
@@ -46,8 +45,8 @@ func GenerateLinkSummaryFile(nameMap map[int]string, edgeSet []LinkEdge, outputP
 				PeerPod:   nameMap[edge.From],
 				LocalIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.To]),
 				PeefIntf:  fmt.Sprintf("sdneth%d", podIntfMap[edge.From]),
-				LocalIP:   GenerateIP(uint(edge.To)),
-				PeerIP:    GenerateIP(uint(edge.From)),
+				LocalIP:   util.GetVxlanIP(uint(edge.To), uint(edge.From)),
+				PeerIP:    util.GetVxlanIP(uint(edge.From), uint(edge.To)),
 			},
 		)
 		podIntfMap[edge.From]++
@@ -62,18 +61,4 @@ func GenerateLinkSummaryFile(nameMap map[int]string, edgeSet []LinkEdge, outputP
 	ioutil.WriteFile(outputPath, conf, 0644)
 
 	return nil
-}
-
-// IP = 0x80000000 | dst << 12 | src
-// The highest bit of IP must be 1
-// Can support allocating IP to at most 2 ^ 16 pods
-func GenerateIP(id uint) string {
-	id = id + 1
-	netIP := make([]string, 4)
-	netIP[0] = fmt.Sprint((id >> 24) & 0xff | 0x80)
-	netIP[1] = fmt.Sprint((id >> 16) & 0xff)
-	netIP[2] = fmt.Sprint((id >> 8) & 0xff)
-	netIP[3] = fmt.Sprint(id & 0xff)
-
-	return strings.Join(netIP, ".") + "/24"
 }

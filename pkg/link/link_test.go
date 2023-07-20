@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"ws/dtn-satellite-sdn/pkg/satellite"
+	"ws/dtn-satellite-sdn/pkg/util"
 )
 
 func TestConnection(t *testing.T) {
@@ -52,9 +53,9 @@ func TestGenerateDistanceMap(t *testing.T) {
 }
 
 func TestGenerateIP(t *testing.T) {
-	ip := GenerateIP(1)
+	ip := util.GetVxlanIP(1, 2)
 	t.Logf("IP is %s\n", ip)
-	if ip != "128.0.0.2/32" {
+	if ip != "128.16.2.1/24" {
 		t.Errorf("IP Dismatch!\n")
 	}
 }
