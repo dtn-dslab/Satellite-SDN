@@ -59,7 +59,7 @@ func GeneratePodSummaryFile(nameMap map[int]string, edgeSet []link.LinkEdge, out
 				Containers: []util.Container{
 					{
 						Name:            "satellite",
-						Image:           "electronicwaste/podserver:v4",
+						Image:           "electronicwaste/podserver:v6",
 						ImagePullPolicy: "IfNotPresent",
 						Ports: []util.ContainerPort{
 							{
@@ -71,7 +71,16 @@ func GeneratePodSummaryFile(nameMap map[int]string, edgeSet []link.LinkEdge, out
 							"-c",
 						},
 						Args: []string {
-							fmt.Sprintf("ifconfig eth0:sdneth0 %s netmask 255.255.255.255 up;/podserver", util.GetGlobalIP(uint(idx))),
+							fmt.Sprintf(
+								"ifconfig eth0:sdneth0 %s netmask 255.255.255.255 up;" + 
+								"iptables -t nat -A OUTPUT -d 10.233.0.0/16 -j MARK --set-mark %d;" +
+								"iptables -t nat -A POSTROUTING -m mark --mark %d -d 10.233.0.0/16 -j SNAT --to-source %s;" +
+								"/podserver", 
+								util.GetGlobalIP(uint(idx)),
+								idx + 5000,
+								idx + 5000,
+								util.GetGlobalIP(uint(idx)),
+							),
 						},
 						SecurityContext: util.SecurityContext{
 							Capabilities: util.Capabilities{
