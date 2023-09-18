@@ -5,29 +5,41 @@ items:
   kind: Pod
   metadata:
     name: sdnone
+    labels:
+      app: sdn-test
   spec:
     containers:
     - name: sdn1
-      image: alpine
+      image: electronicwaste/podserver:v6
       imagePullPolicy: IfNotPresent
       ports:
       - containerPort: 8080
-      command: ["/bin/sh", "-c"]
-      args: ["sleep 2000000000000"]
+      command:
+      - /bin/sh
+      - -c
+      args:
+      - /podserver
     nodeSelector:
       kubernetes.io/hostname: node1.dtn.lab
+    
+              
 - apiVersion: v1
   kind: Pod
   metadata:
     name: sdntwo
+    labels:
+      app: sdn-test
   spec:
     containers:
     - name: sdn2
-      image: golang:1.21-rc-alpine
+      image: electronicwaste/podserver:v6
       imagePullPolicy: IfNotPresent
       ports:
       - containerPort: 8080
-      command: ["/bin/sh", "-c"]
-      args: ["sleep 2000000000000"]
+      command:
+      - /bin/sh
+      - -c
+      args:
+      - /podserver
     nodeSelector:
       kubernetes.io/hostname: node2.dtn.lab

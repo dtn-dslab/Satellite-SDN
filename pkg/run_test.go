@@ -4,7 +4,7 @@ import "testing"
 
 func TestRunSDNWithoutTimeout(t *testing.T) {
 	inputFilePath := "./data/geodetic.txt"
-	if err := RunSatelliteSDN(inputFilePath, 3, -1); err != nil {
+	if err := RunSatelliteSDN(inputFilePath, 7, -1); err != nil {
 		t.Error(err)
 	}
 }

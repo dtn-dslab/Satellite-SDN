@@ -40,7 +40,7 @@ func GeneratePodSummaryFile(nameMap map[int]string, edgeSet []link.LinkEdge, out
 		nodeSet = append(nodeSet, idx)
 	}
 	nodeMap := map[int]string{} // map: satId -> node
-	partitions := GraphCutLinear(nodeSet, edgeSet, expectedNodeNum)
+	partitions := GraphCutHash(nodeSet, expectedNodeNum)
 	for nodeId, partition := range partitions {
 		for _, satId := range partition {
 			nodeMap[satId] = nodes[nodeId]

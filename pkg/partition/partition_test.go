@@ -17,7 +17,7 @@ func TestCutGraph(t *testing.T) {
 }
 
 func TestGeneratePodYaml(t *testing.T) {
-	constellation, err := satellite.NewConstellation("../data/geodetic.txt")
+	constellation, err := satellite.NewConstellation("../data/starlink863.txt")
 	if err != nil {
 		t.Error(err)
 	}
@@ -25,5 +25,5 @@ func TestGeneratePodYaml(t *testing.T) {
 	nameMap := constellation.GetNameMap()
 	connGraph := link.GenerateConnGraph(constellation)
 	edgeSet := link.ConvertConnGraphToEdgeSet(connGraph)
-	GeneratePodSummaryFile(nameMap, edgeSet, "../output/pod.yaml", 3)
+	GeneratePodSummaryFile(nameMap, edgeSet, "../output/pod.yaml", 7)
 }

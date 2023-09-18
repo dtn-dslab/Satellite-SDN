@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sdn-service
+spec:
+  selector:
+    app: sdn-test
+  ports:
+  - name: test-port
+    port: 80
+    targetPort: 8080

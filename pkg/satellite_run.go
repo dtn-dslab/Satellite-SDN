@@ -11,7 +11,7 @@ import (
 // Special case for satellite/constellation:
 // Compute edgeSet & route according to my specific logics
 // Return nameMap, edgeSet and routeTable
-func GenerateSatelliteConfig(inputFilePath string, expectedNodeNum int) (map[int]string, []link.LinkEdge, [][]int, error) {
+func GenerateSatelliteConfig(inputFilePath string) (map[int]string, []link.LinkEdge, [][]int, error) {
 	// Initialize constellation
 	constellation, err := satellite.NewConstellation(inputFilePath)
 	if err != nil {
@@ -32,7 +32,7 @@ func GenerateSatelliteConfig(inputFilePath string, expectedNodeNum int) (map[int
 // If timeout < 0, do not update SDN
 func RunSatelliteSDN(inputFilePath string, expectedNodeNum int, timeout int) error {
 	// Compute configuration & Initialize SDN environment
-	nameMap, edgeSet, routeTable, err := GenerateSatelliteConfig(inputFilePath, expectedNodeNum)
+	nameMap, edgeSet, routeTable, err := GenerateSatelliteConfig(inputFilePath)
 	if err != nil {
 		return fmt.Errorf("Generate satellite config error: %v\n", err)
 	}
@@ -45,7 +45,7 @@ func RunSatelliteSDN(inputFilePath string, expectedNodeNum int, timeout int) err
 		return nil
 	}
 	for ;; time.Sleep(time.Duration(timeout) * time.Second) {
-		nameMap, edgeSet, routeTable, err := GenerateSatelliteConfig(inputFilePath, expectedNodeNum)
+		nameMap, edgeSet, routeTable, err := GenerateSatelliteConfig(inputFilePath)
 		if err != nil {
 			return fmt.Errorf("Generate satellite config error: %v\n", err)
 		}

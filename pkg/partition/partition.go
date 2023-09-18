@@ -9,7 +9,7 @@ import (
 )
 
 func GraphCutHash(nodeSet []int, expectedSplitsCount int) [][]int {
-	ret := [][]int{}
+	ret := make([][]int, expectedSplitsCount)
 
 	for _, nodeId := range nodeSet {
 		idx := nodeId % expectedSplitsCount
