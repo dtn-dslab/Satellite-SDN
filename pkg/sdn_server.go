@@ -105,9 +105,9 @@ func DelSDNHandler(w http.ResponseWriter, r *http.Request) {
 // Construct network emulation system with nameMap, edgeSet, routeTable and expectedNodeNum
 func CreateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]int, expectedNodeNum int) error {
 	// Define the path that yaml files store in
-	podOutputPath := path.Join("./output", "pod.yaml")
-	topoOutputPath := path.Join("./output", "topology.yaml")
-	routeOutputPath := path.Join("./output", "route.yaml")
+	podOutputPath := path.Join("./pkg/output", "pod.yaml")
+	topoOutputPath := path.Join("./pkg/output", "topology.yaml")
+	routeOutputPath := path.Join("./pkg/output", "route.yaml")
 
 	// Generate topology file & apply topology
 	log.Println("Generating topology yaml...")

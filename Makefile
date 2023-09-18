@@ -64,6 +64,10 @@ test: manifests generate fmt vet envtest ## Run tests.
 build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager main.go
 
+.PHONY: sdn
+sdn: 
+	go build -o bin/sdnctl cmd/sdnctl.go
+
 .PHONY: run
 run: manifests generate fmt ## Run a controller from your host.
 	go run ./main.go
@@ -150,3 +154,4 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
