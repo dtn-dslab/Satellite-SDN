@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os/exec"
 	"path"
+	"time"
 
 	"ws/dtn-satellite-sdn/pkg/link"
 	"ws/dtn-satellite-sdn/pkg/partition"
@@ -132,6 +133,8 @@ func CreateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]i
 		return fmt.Errorf("Apply pod error: %v\n", err)
 	}
 
+	endInitTime := time.Now()
+
 	// Generate route file & apply route
 	log.Println("Generating route yaml...")
 	err = route.GenerateRouteSummaryFile(nameMap, routeTable, routeOutputPath)
@@ -142,6 +145,9 @@ func CreateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]i
 	if err = routeCmd.Run(); err != nil {
 		return fmt.Errorf("Apply route error: %v\n", err)
 	}
+
+	endApplyRouteTime := time.Now()
+	log.Printf("Apply route time %vs", endApplyRouteTime.Sub(endInitTime).Seconds())
 
 	return nil
 }
