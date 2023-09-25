@@ -26,7 +26,7 @@ func NewStatellite(name, line1, line2 string) (*Satellite, error) {
 	}
 	return &Satellite{
 		Name:      name,
-		Satellite: gosate.TLEToSat(line1, line2, "wgs72"),
+		Satellite: gosate.TLEToSat(line1, line2, "wgs84"),
 	}, nil
 }
 
