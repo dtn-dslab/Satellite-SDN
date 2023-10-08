@@ -1,8 +1,10 @@
-# sdn-kubebuilder
-// TODO(user): Add simple overview of use/purpose
+# Satellite-SDN
+A SDN-style satellite network emulation system running on K8s cluster.
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+![](./asset/arch.jpg)
+
+Satellite-SDN provides users with a CLI interface to customize emulation environment (the typical input is a TLE file). Satellite-SDN builds a emulation env according to satellite orbit described by TLE file and updates env with timeout specified by the user.
 
 ## Getting Started
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
@@ -42,13 +44,53 @@ make undeploy
 ```
 
 ## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
+
+Every new feature should have its own branch.
+
+Use PR to merge your branch into main branch.
+
+And commit comment should obey [git commit norm](https://zhuanlan.zhihu.com/p/182553920)
+
 
 ### How it works
-This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
+
+Satellite-SDN has 3 components:
+1. SDN Server: `/sdn`
+2. Route CRD Controller: `/controllers`
+3. CLI Interface: `/cmd`
+
+
+**SDN Server**
+
+SDN server provides function call interfaces for CLI interfaces.
+
+Two main APIs:
+```
+func RunSatelliteSDN(startParams) error;
+func DelSatelliteSDN(endParams) error;
+```
+
+Http interface and grpc interface are being built now.
+
+Https interface:
+```
+func CreateSDNHandler(w http.ResponseWriter, r *http.Request);
+func UpdateSDNHandler(w http.ResponseWriter, r *http.Request);
+func DelSDNHandler(w http.ResponseWriter, r *http.Request);
+```
+
+**Route CRD Controller**
+
+This component aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
 
 It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/) 
 which provides a reconcile function responsible for synchronizing resources untile the desired state is reached on the cluster 
+
+**CLI Interface**
+
+**Build**: `make sdn`
+
+**Run**: `./bin/sdnctl init [FLAGS]`
 
 ### Test It Out
 1. Install the CRDs into the cluster:
