@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"ws/dtn-satellite-sdn/pkg"
-	"ws/dtn-satellite-sdn/pkg/util"
+	"ws/dtn-satellite-sdn/sdn"
+	"ws/dtn-satellite-sdn/sdn/util"
 )
   
 
