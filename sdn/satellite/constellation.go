@@ -2,7 +2,6 @@ package satellite
 
 import (
 	"fmt"
-	// "log"
 	"io/ioutil"
 	"strings"
 )
