@@ -84,3 +84,17 @@ func (c *Constellation) GetNameMap() map[int]string {
 	}
 	return nameMap
 }
+
+func (c Constellation) Len() int {
+	return len(c.Satellites)
+}
+
+func (c Constellation) Less(i, j int) bool {
+	return c.Satellites[i].Angle() < c.Satellites[j].Angle()
+}
+
+func (c Constellation) Swap(i, j int) {
+	c.Satellites[i], c.Satellites[j] = c.Satellites[j], c.Satellites[i]
+}
+
+
