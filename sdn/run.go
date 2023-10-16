@@ -7,7 +7,7 @@ import (
 	"path"
 	"time"
 	"ws/dtn-satellite-sdn/sdn/link"
-	"ws/dtn-satellite-sdn/sdn/partition"
+	"ws/dtn-satellite-sdn/sdn/pod"
 	"ws/dtn-satellite-sdn/sdn/route"
 	"ws/dtn-satellite-sdn/sdn/satellite"
 )
@@ -97,7 +97,7 @@ func CreateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]i
 	// Generate pod file & apply pod
 	// p.s. We need to apply topology first due to the implementation of kube-dtn.
 	log.Println("Generate pod yaml...")
-	err = partition.GeneratePodSummaryFile(nameMap, edgeSet, podOutputPath, expectedNodeNum)
+	err = pod.GeneratePodSummaryFile(nameMap, edgeSet, podOutputPath, expectedNodeNum)
 	if err != nil {
 		return fmt.Errorf("Generating pod yaml failed: %v\n", err)
 	}
