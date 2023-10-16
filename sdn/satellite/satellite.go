@@ -3,13 +3,13 @@ package satellite
 import (
 	"fmt"
 	"time"
-	// "log"
 	"math"
 
 	gosate "github.com/joshuaferrara/go-satellite"
 )
 
 type Satellite struct {
+	UUID	  string
 	Name      string
 	Satellite gosate.Satellite
 }

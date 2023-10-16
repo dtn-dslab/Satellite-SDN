@@ -7,6 +7,7 @@ import (
 )
 
 type Constellation struct {
+	OrbitIndex int
 	Satellites []Satellite
 }
 
