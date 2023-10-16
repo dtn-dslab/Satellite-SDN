@@ -1,12 +1,111 @@
 package partition
 
 import (
-	"reflect"
-	"sort"
-	// "fmt"
+	"fmt"
+	"io/ioutil"
+	"os/exec"
+	"strings"
 
+	"gopkg.in/yaml.v3"
 	"ws/dtn-satellite-sdn/sdn/link"
+	"ws/dtn-satellite-sdn/sdn/util"
 )
+
+func GeneratePodSummaryFile(nameMap map[int]string, edgeSet []link.LinkEdge, outputPath string, expectedNodeNum int) error {
+	podList := util.PodList{}
+	podList.Kind = "PodList"
+	podList.APIVersion = "v1"
+
+	// Get available nodes
+	nodes := []string{}
+	cmd := exec.Command("kubectl", "get", "nodes")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("Executing %v failed: %v", cmd, err)
+	}
+	lines := strings.Split(string(output), "\n")
+	lines = lines[1:]
+	for _, line := range lines {
+		blocks := strings.Split(string(line), " ")
+		if !strings.Contains(blocks[0], "master") {
+			nodes = append(nodes, blocks[0])
+		}
+	}
+
+	// Consturct partitionMap
+	nodeSet := []int{}
+	for idx := 0; idx < len(nameMap); idx++ {
+		nodeSet = append(nodeSet, idx)
+	}
+	nodeMap := map[int]string{} // map: satId -> node
+	partitions := GraphCutHash(nodeSet, expectedNodeNum)
+	for nodeId, partition := range partitions {
+		for _, satId := range partition {
+			nodeMap[satId] = nodes[nodeId]
+		}
+	}
+
+	// Construct pods
+	for idx := 0; idx < len(nameMap); idx++ {
+		pod := util.Pod{
+			APIVersion: "v1",
+			Kind:       "Pod",
+			MetaData: util.MetaData{
+				Name: nameMap[idx],
+			},
+			Spec: util.PodSpec{
+				Containers: []util.Container{
+					{
+						Name:            "satellite",
+						Image:           "electronicwaste/podserver:v6",
+						ImagePullPolicy: "IfNotPresent",
+						Ports: []util.ContainerPort{
+							{
+								ContainerPort: 8080,
+							},
+						},
+						Command: []string {
+							"/bin/sh",
+							"-c",
+						},
+						Args: []string {
+							fmt.Sprintf(
+								"ifconfig eth0:sdneth0 %s netmask 255.255.255.255 up;" + 
+								"iptables -t nat -A OUTPUT -d 10.233.0.0/16 -j MARK --set-mark %d;" +
+								"iptables -t nat -A POSTROUTING -m mark --mark %d -d 10.233.0.0/16 -j SNAT --to-source %s;" +
+								"/podserver", 
+								util.GetGlobalIP(uint(idx)),
+								idx + 5000,
+								idx + 5000,
+								util.GetGlobalIP(uint(idx)),
+							),
+						},
+						SecurityContext: util.SecurityContext{
+							Capabilities: util.Capabilities{
+								Add: []util.Capability{
+									"NET_ADMIN",
+								},
+							},
+						},
+					},
+				},
+				NodeSelector: map[string]string{
+					"kubernetes.io/hostname": nodeMap[idx],
+				},
+			},
+		}
+		podList.Items = append(podList.Items, pod)
+	}
+
+	// Write to file
+	conf, err := yaml.Marshal(podList)
+	if err != nil {
+		return fmt.Errorf("Error in parsing podList to yaml: %v\n", err)
+	}
+	ioutil.WriteFile(outputPath, conf, 0644)
+
+	return nil
+}
 
 func GraphCutHash(nodeSet []int, expectedSplitsCount int) [][]int {
 	ret := make([][]int, expectedSplitsCount)
@@ -19,116 +118,3 @@ func GraphCutHash(nodeSet []int, expectedSplitsCount int) [][]int {
 	return ret
 }
 
-func GraphCutLinear(nodeSet []int, edgeSet []link.LinkEdge, expectedSplitsCount int) [][]int {
-	nodeCount, beta := len(nodeSet), 1.0
-	// fmt.Println("nodeCount is ", nodeCount)
-	allPartitions, nextPartitions := [][]int{}, [][]int{}
-	for idx := 0; idx < expectedSplitsCount; idx++ {
-		allPartitions = append(allPartitions, []int{})
-		nextPartitions = append(nextPartitions, []int{})
-	}
-
-	firstIter := true
-	for !reflect.DeepEqual(allPartitions, nextPartitions) || firstIter {
-		firstIter = false
-		copy(allPartitions, nextPartitions)
-		// fmt.Println("Iteration!")
-		for _, nodeId := range nodeSet {
-			// fmt.Println("SubIteration")
-			// Get corresponding neighbours
-			neighbours := []int{}
-			for _, edge := range edgeSet {
-				if edge.From == nodeId {
-					neighbours = append(neighbours, edge.To)
-				} else if edge.To == nodeId {
-					neighbours = append(neighbours, edge.From)
-				}
-			}
-			// fmt.Printf("Neighbours of %d:%v\n", nodeId, neighbours)
-			// Add new node to one of partitions
-			nextPartitions = Partition(nextPartitions, nodeId, neighbours, expectedSplitsCount, nodeCount, beta)
-			// fmt.Printf("%v\n", nextPartitions)
-			for _, nextPartition := range nextPartitions {
-				sort.Slice(nextPartition, func(i, j int) bool {
-					return nextPartition[i] < nextPartition[j]
-				})
-			}
-			sort.Slice(nextPartitions, func(i, j int) bool {
-				if len(nextPartitions[i]) != 0 && len(nextPartitions[j]) != 0 {
-					return nextPartitions[i][0] < nextPartitions[j][0]
-				} else {
-					return false
-				}
-			})
-		}
-	}
-
-	return nextPartitions
-}
-
-func Partition(curPartitions [][]int, nodeId int, neighbours []int, expectedSplitsCount int, nodeCount int, beta float64) [][]int {
-	targetIdx, targetScore := -1, -1.0
-	for idx, partition := range curPartitions {
-		// Deleting the same node
-		newPartition := []int{}
-		for i := range partition {
-			if partition[i] != nodeId {
-				newPartition = append(newPartition, partition[i])
-			}
-		}
-		// fmt.Printf("newPartition: %v\n", newPartition)
-		curPartitions[idx] = newPartition
-		// Counting node in both neighbours and partition
-		interserctCount := 0
-		for _, neighbourId := range neighbours {
-			for _, partitionNodeId := range curPartitions[idx] {
-				if partitionNodeId == neighbourId {
-					interserctCount++
-				}
-			}
-		}
-		// Calculate and update score
-		C := beta * float64(nodeCount) / float64(expectedSplitsCount)
-		weight := float64(1) - float64(len(curPartitions[idx]))/C
-		score := float64(interserctCount) * weight
-		if score > targetScore {
-			targetIdx = idx
-			targetScore = score
-		}
-	}
-	// Update partitions
-	nextPartitions := [][]int{}
-	for idx := 0; idx < expectedSplitsCount; idx++ {
-		nextPartitions = append(nextPartitions, []int{})
-	}
-	copy(nextPartitions, curPartitions)
-	nextPartitions[targetIdx] = append(nextPartitions[targetIdx], nodeId)
-	return nextPartitions
-}
-
-func ComputeEdgesAcrossSubgraphs(nodeSet []int, edgeSet []link.LinkEdge, partitions [][]int) []link.LinkEdge {
-	ret := []link.LinkEdge{}
-	for _, edge := range edgeSet {
-		flag1, flag2 := false, false
-		for _, partition := range partitions {
-			for _, node := range partition {
-				if node == edge.From {
-					flag1 = true
-				}
-				if node == edge.To {
-					flag2 = true
-				}
-			}
-			// The edge does not cross graph
-			if flag1 && flag2 {
-				break
-			}
-			// Reset flag
-			flag1, flag2 = false, false
-		}
-		if !flag1 && !flag2 {
-			ret = append(ret, edge)
-		}
-	}
-	return ret
-}
