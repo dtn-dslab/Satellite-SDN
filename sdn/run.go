@@ -97,7 +97,7 @@ func CreateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]i
 	// Generate pod file & apply pod
 	// p.s. We need to apply topology first due to the implementation of kube-dtn.
 	log.Println("Generate pod yaml...")
-	err = pod.GeneratePodSummaryFile(nameMap, edgeSet, podOutputPath, expectedNodeNum)
+	err = pod.PodSyncLoop(nameMap)
 	if err != nil {
 		return fmt.Errorf("Generating pod yaml failed: %v\n", err)
 	}
@@ -159,12 +159,12 @@ func UpdateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]i
 // Uninitialize the network emulation system
 func DelSDN(nameMap map[int]string) error {
 	// Define the path that yaml files store in
-	podOutputPath := path.Join("./output", "pod.yaml")
 	topoOutputPath := path.Join("./output", "topology.yaml")
 	routeOutputPath := path.Join("./output", "route.yaml")
 
 	// Delete Pod
-	podCmd := exec.Command("kubectl", "delete", "-f", podOutputPath)
+	// TODO(ws): Delete pods in smaller granularity
+	podCmd := exec.Command("kubectl", "delete", "pod", "--all")
 	if err := podCmd.Run(); err != nil {
 		return fmt.Errorf("Delete pod error: %v\n", err)
 	}

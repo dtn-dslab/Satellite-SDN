@@ -55,6 +55,7 @@ func PodSyncLoop(nameMap map[int]string) error {
 	namespace := strings.Trim(string(output), "\"")
 
 	// construct pods
+	// TODO(ws): Store pod name in database
 	for idx := 0; idx < len(nameMap); idx++ {
 		sat_name := "satellite"
 		image_name := "electronicwaste/podserver:v6"
