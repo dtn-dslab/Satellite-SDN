@@ -6,69 +6,6 @@ type MetaData struct {
 	Name string `json:"name" yaml:"name"`
 }
 
-type ContainerPort struct {
-	ContainerPort int32 `json:"containerPort" yaml:"containerPort"`
-}
-
-type Capability string
-
-type Capabilities struct {
-	// Added capabilities
-	// +optional
-	Add []Capability `json:"add,omitempty" yaml:"add,omitempty"`
-	// Removed capabilities
-	// +optional
-	Drop []Capability `json:"drop,omitempty" yaml:"drop,omitempty"`
-}
-
-type SecurityContext struct {
-	// The capabilities to add/drop when running containers.
-	// Defaults to the default set of capabilities granted by the container runtime.
-	// Note that this field cannot be set when spec.os.name is windows.
-	// +optional
-	Capabilities Capabilities `json:"capabilities" yaml:"capabilities"`
-}
-
-type Container struct {
-	Name string `json:"name" yaml:"name"`
-
-	Image string `json:"image" yaml:"image"`
-
-	Command []string `json:"command" yaml:"command"`
-
-	Args []string `json:"args" yaml:"args"`
-
-	Ports []ContainerPort `json:"ports" yaml:"ports"`
-
-	ImagePullPolicy string `json:"imagePullPolicy" yaml:"imagePullPolicy"`
-
-	SecurityContext SecurityContext `json:"securityContext" yaml:"securityContext"`
-}
-
-type PodSpec struct {
-	Containers []Container `json:"containers,omitempty" yaml:"containers,omitempty"`
-
-	NodeSelector map[string]string `json:"nodeSelector,omitempty" yaml:"nodeSelector,omitempty"`
-}
-
-type Pod struct {
-	APIVersion string `json:"apiVersion" yaml:"apiVersion"`
-
-	MetaData MetaData `json:"metadata" yaml:"metadata"`
-
-	Kind string `json:"kind" yaml:"kind"`
-
-	Spec PodSpec `json:"spec" yaml:"spec"`
-}
-
-type PodList struct {
-	APIVersion string `json:"apiVersion" yaml:"apiVersion"`
-
-	Kind string `json:"kind" yaml:"kind"`
-
-	Items []Pod `json:"items" yaml:"items"`
-}
-
 type Link struct {
 	UID int `json:"uid" yaml:"uid"`
 
