@@ -2,57 +2,26 @@ package pod
 
 import (
 	"context"
-	"flag"
 	"fmt"
-	"os/exec"
-	"path/filepath"
-	"strings"
 
 	"ws/dtn-satellite-sdn/sdn/util"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/client-go/applyconfigurations/core/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 )
 
 func PodSyncLoop(nameMap map[int]string) error {
-	var kubeconfig *string
-	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-	flag.Parse()
-
-	// use the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	if err != nil {
-		return fmt.Errorf("CONFIG ERROR: %v", err)
-	}
-
-	// create the clientset
-	clientset, err := kubernetes.NewForConfig(config)
+	clientset, err := util.GetClientset()
 	if err != nil {
 		return fmt.Errorf("CREATE CLIENTSET ERROR: %v", err)
 	}
 
 	// get current namespace
-	cmd := exec.Command(
-		"/bin/sh",
-		"-c",
-		fmt.Sprintf(
-			"cat %s | grep namespace | tr -d ' ' | sed 's/namespace://g' | tr -d '\n'", 
-			filepath.Join(homedir.HomeDir(), ".kube", "config"),
-		),
-	)
-	output, err := cmd.CombinedOutput()
+	namespace, err := util.GetNamespace()
 	if err != nil {
-		return fmt.Errorf("EXEC COMMAND FAILURE: %v", err)
+		return fmt.Errorf("GET NAMESPACE ERROR: %v", err)
 	}
-	namespace := strings.Trim(string(output), "\"")
 
 	// construct pods
 	// TODO(ws): Store pod name in database
