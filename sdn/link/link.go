@@ -1,10 +1,15 @@
 package link
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"sort"
 	"ws/dtn-satellite-sdn/sdn/satellite"
+	"ws/dtn-satellite-sdn/sdn/util"
+
+	topov1 "github.com/y-young/kube-dtn/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const orbitAltDelta float64 = 500
@@ -12,6 +17,71 @@ const orbitAltDelta float64 = 500
 type LinkEdge struct {
 	From int
 	To   int
+}
+
+func LinkSyncLoop(nameMap map[int]string, edgeSet []LinkEdge) error {
+	// Initialize topologyList
+	topoList := topov1.TopologyList{}
+	podIntfMap := make([]int, len(nameMap))
+	for idx := 0; idx < len(nameMap); idx++ {
+		podIntfMap[idx] = 1
+		topoList.Items = append(topoList.Items, topov1.Topology{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: nameMap[idx],
+			},
+		})
+	}
+
+	// Construct topologyList according to edgeSet
+	for _, edge := range edgeSet {
+		topoList.Items[edge.From].Spec.Links = append(
+			topoList.Items[edge.From].Spec.Links,
+			topov1.Link{
+				UID:       (edge.From << 12) + edge.To,
+				PeerPod:   nameMap[edge.To],
+				LocalIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.From]),
+				PeerIntf:  fmt.Sprintf("sdneth%d", podIntfMap[edge.To]),
+				LocalIP:   util.GetVxlanIP(uint(edge.From), uint(edge.To)),
+				PeerIP:    util.GetVxlanIP(uint(edge.To), uint(edge.From)),
+			},
+		)
+		topoList.Items[edge.To].Spec.Links = append(
+			topoList.Items[edge.To].Spec.Links, 
+			topov1.Link{
+				UID:       (edge.From << 12) + edge.To,
+				PeerPod:   nameMap[edge.From],
+				LocalIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.To]),
+				PeerIntf:  fmt.Sprintf("sdneth%d", podIntfMap[edge.From]),
+				LocalIP:   util.GetVxlanIP(uint(edge.To), uint(edge.From)),
+				PeerIP:    util.GetVxlanIP(uint(edge.From), uint(edge.To)),
+			},
+		)
+		podIntfMap[edge.From]++
+		podIntfMap[edge.To]++
+	}
+
+	// Get current namespace
+	namespace, err := util.GetNamespace()
+	if err != nil {
+		return fmt.Errorf("GET NAMESPACE ERROR: %v", err)
+	}
+
+	// Create topologyList with RESTClient
+	restClient, err := util.GetTopoClient()
+	if err != nil {
+		return fmt.Errorf("CONFIG ERROR: %v", err)
+	}
+	for _, topo := range topoList.Items {
+		if err := restClient.Post().
+			Namespace(namespace).
+			Resource("topologies").
+			Body(&topo).
+			Do(context.TODO()).
+			Into(nil); err != nil {
+			return fmt.Errorf("APPLY TOPOLOGY FAILURE: %v", err)
+		}
+	}
+	return nil
 }
 
 func isConnection(c *satellite.Constellation, sat1, sat2 string) (bool, error) {

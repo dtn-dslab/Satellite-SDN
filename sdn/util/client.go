@@ -17,11 +17,13 @@ import (
 	"k8s.io/client-go/util/homedir"
 
 	sdnv1 "ws/dtn-satellite-sdn/api/v1"
+	topov1 "github.com/y-young/kube-dtn/api/v1"
 )
 
 var (
 	kubeconfig *string = nil
 	routeclient *rest.RESTClient = nil
+	topoclient *rest.RESTClient = nil
 )
 
 func init() {
@@ -33,6 +35,7 @@ func init() {
 	flag.Parse()
 
 	sdnv1.AddToScheme(scheme.Scheme)
+	topov1.AddToScheme(scheme.Scheme)
 }
 
 func GetClientset() (*kubernetes.Clientset, error) {
@@ -46,7 +49,7 @@ func GetClientset() (*kubernetes.Clientset, error) {
 	return kubernetes.NewForConfig(config)
 }
 
-func GetRouteClient() (*rest.RESTClient, error){
+func GetRouteClient() (*rest.RESTClient, error) {
 	// If RouteClient is not empty, return RouteClient
 	if routeclient != nil {
 		return routeclient, nil
@@ -64,6 +67,26 @@ func GetRouteClient() (*rest.RESTClient, error){
 
 	routeclient, err = rest.RESTClientFor(config)
 	return routeclient, err
+}
+
+func GetTopoClient() (*rest.RESTClient, error) {
+	// If TopoClient is not empty, return TopoClient
+	if topoclient != nil {
+		return topoclient, nil
+	}
+	// use the current context in kubeconfig
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+		return nil, fmt.Errorf("CONFIG ERROR: %v", err)
+	}
+
+	config.APIPath = "/apis"
+	config.ContentConfig.GroupVersion = &topov1.GroupVersion
+	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
+	config.UserAgent = rest.DefaultKubernetesUserAgent()
+
+	topoclient, err := rest.RESTClientFor(config)
+	return topoclient, err
 }
 
 func GetNamespace() (string, error) {

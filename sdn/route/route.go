@@ -74,13 +74,12 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int) error {
 			}
 
 		}
-		err := restClient.Post().
+		if err := restClient.Post().
 			Namespace(namespace).
 			Resource("routes").
 			Body(&route).
 			Do(context.TODO()).
-			Into(nil)
-		if err != nil {
+			Into(nil); err != nil {
 			return fmt.Errorf("APPLY ROUTE FAILURE: %v", err)
 		}
 	}
