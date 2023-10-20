@@ -79,9 +79,7 @@ func GenerateSatelliteConfig(inputFilePath string) (map[int]string, []link.LinkE
 // Construct network emulation system with nameMap, edgeSet, routeTable and expectedNodeNum
 func CreateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]int, expectedNodeNum int) error {
 	// Define the path that yaml files store in
-	podOutputPath := path.Join("./pkg/output", "pod.yaml")
-	topoOutputPath := path.Join("./pkg/output", "topology.yaml")
-	routeOutputPath := path.Join("./pkg/output", "route.yaml")
+	topoOutputPath := path.Join("./sdn/output", "topology.yaml")
 
 	// Generate topology file & apply topology
 	log.Println("Generating topology yaml...")
@@ -99,26 +97,17 @@ func CreateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]i
 	log.Println("Generate pod yaml...")
 	err = pod.PodSyncLoop(nameMap)
 	if err != nil {
-		return fmt.Errorf("Generating pod yaml failed: %v\n", err)
-	}
-	podCmd := exec.Command("kubectl", "apply", "-f", podOutputPath)
-	if err = podCmd.Run(); err != nil {
-		return fmt.Errorf("Apply pod error: %v\n", err)
+		return fmt.Errorf("Pod sync failed: %v\n", err)
 	}
 
 	endInitTime := time.Now()
 
 	// Generate route file & apply route
 	log.Println("Generating route yaml...")
-	err = route.GenerateRouteSummaryFile(nameMap, routeTable, routeOutputPath)
+	err = route.RouteSyncLoop(nameMap, routeTable)
 	if err != nil {
-		return fmt.Errorf("Generating route yaml failed: %v\n", err)
+		return fmt.Errorf("Route sync failed: %v\n", err)
 	}
-	routeCmd := exec.Command("kubectl", "apply", "-f", routeOutputPath)
-	if err = routeCmd.Run(); err != nil {
-		return fmt.Errorf("Apply route error: %v\n", err)
-	}
-
 	endApplyRouteTime := time.Now()
 	log.Printf("Apply route time %vs", endApplyRouteTime.Sub(endInitTime).Seconds())
 
@@ -128,8 +117,7 @@ func CreateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]i
 // Update network emulation system with nameMap, edgeSet and routeTable
 func UpdateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]int) error {
 	// Define the path that yaml files store in
-	topoOutputPath := path.Join("./output", "topology.yaml")
-	routeOutputPath := path.Join("./output", "route.yaml")
+	topoOutputPath := path.Join("./sdn/output", "topology.yaml")
 
 	// Generate topology file & apply topology
 	log.Println("Generating topology yaml...")
@@ -144,13 +132,9 @@ func UpdateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]i
 
 	// Generate route file & apply route
 	log.Println("Generating route yaml...")
-	err = route.GenerateRouteSummaryFile(nameMap, routeTable, routeOutputPath)
+	err = route.RouteSyncLoop(nameMap, routeTable)
 	if err != nil {
 		return fmt.Errorf("Generating route yaml failed: %v\n", err)
-	}
-	routeCmd := exec.Command("kubectl", "apply", "-f", routeOutputPath)
-	if err = routeCmd.Run(); err != nil {
-		return fmt.Errorf("Apply route error: %v\n", err)
 	}
 
 	return nil
@@ -159,8 +143,7 @@ func UpdateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]i
 // Uninitialize the network emulation system
 func DelSDN(nameMap map[int]string) error {
 	// Define the path that yaml files store in
-	topoOutputPath := path.Join("./output", "topology.yaml")
-	routeOutputPath := path.Join("./output", "route.yaml")
+	topoOutputPath := path.Join("./sdn/output", "topology.yaml")
 
 	// Delete Pod
 	// TODO(ws): Delete pods in smaller granularity
@@ -174,7 +157,8 @@ func DelSDN(nameMap map[int]string) error {
 		return fmt.Errorf("Delete topology error: %v\n", err)
 	}
 	// Delete Route
-	routeCmd := exec.Command("kubectl", "delete", "-f", routeOutputPath)
+	// TODO(ws): Delete routes in smaller granularity
+	routeCmd := exec.Command("kubectl", "delete", "route", "--all")
 	if err := routeCmd.Run(); err != nil {
 		return fmt.Errorf("Delete route error: %v\n", err)
 	}

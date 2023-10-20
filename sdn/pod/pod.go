@@ -12,6 +12,7 @@ import (
 )
 
 func PodSyncLoop(nameMap map[int]string) error {
+	// get clientset
 	clientset, err := util.GetClientset()
 	if err != nil {
 		return fmt.Errorf("CREATE CLIENTSET ERROR: %v", err)
@@ -22,7 +23,7 @@ func PodSyncLoop(nameMap map[int]string) error {
 	if err != nil {
 		return fmt.Errorf("GET NAMESPACE ERROR: %v", err)
 	}
-
+	
 	// construct pods
 	// TODO(ws): Store pod name in database
 	for idx := 0; idx < len(nameMap); idx++ {

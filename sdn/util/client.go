@@ -7,13 +7,24 @@ import (
 	"path/filepath"
 	"strings"
 
+	// "k8s.io/apimachinery/pkg/runtime"
+	// "k8s.io/apimachinery/pkg/runtime/schema"
+	// metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+
+	sdnv1 "ws/dtn-satellite-sdn/api/v1"
 )
 
-func GetClientset() (*kubernetes.Clientset, error) {
-	var kubeconfig *string
+var (
+	kubeconfig *string = nil
+	routeclient *rest.RESTClient = nil
+)
+
+func init() {
 	if home := homedir.HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
 	} else {
@@ -21,6 +32,10 @@ func GetClientset() (*kubernetes.Clientset, error) {
 	}
 	flag.Parse()
 
+	sdnv1.AddToScheme(scheme.Scheme)
+}
+
+func GetClientset() (*kubernetes.Clientset, error) {
 	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
@@ -29,6 +44,26 @@ func GetClientset() (*kubernetes.Clientset, error) {
 
 	// create the clientset
 	return kubernetes.NewForConfig(config)
+}
+
+func GetRouteClient() (*rest.RESTClient, error){
+	// If RouteClient is not empty, return RouteClient
+	if routeclient != nil {
+		return routeclient, nil
+	}
+	// use the current context in kubeconfig
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+		return nil, fmt.Errorf("CONFIG ERROR: %v", err)
+	}
+
+	config.APIPath = "/apis"
+	config.ContentConfig.GroupVersion = &sdnv1.GroupVersion
+	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
+	config.UserAgent = rest.DefaultKubernetesUserAgent()
+
+	routeclient, err = rest.RESTClientFor(config)
+	return routeclient, err
 }
 
 func GetNamespace() (string, error) {
