@@ -3,12 +3,12 @@ package link
 import (
 	"testing"
 
-	"ws/dtn-satellite-sdn/sdn/satellite"
+	satv1 "ws/dtn-satellite-sdn/sdn/type/v1"
 	"ws/dtn-satellite-sdn/sdn/util"
 )
 
 func TestConnection(t *testing.T) {
-	constellation, err := satellite.NewConstellation("../data/geodetic.txt")
+	constellation, err := satv1.NewConstellation("../data/geodetic.txt")
 	if err != nil {
 		t.Errorf("%v\n", err)
 	}
@@ -29,7 +29,7 @@ func TestConnection(t *testing.T) {
 }
 
 func TestGenerateEdgeSet(t *testing.T) {
-	constellation, err := satellite.NewConstellation("../data/geodetic.txt")
+	constellation, err := satv1.NewConstellation("../data/geodetic.txt")
 	if err != nil {
 		t.Errorf("%v\n", err)
 	}
@@ -41,7 +41,7 @@ func TestGenerateEdgeSet(t *testing.T) {
 }
 
 func TestGenerateDistanceMap(t *testing.T) {
-	constellation, err := satellite.NewConstellation("../data/geodetic.txt")
+	constellation, err := satv1.NewConstellation("../data/geodetic.txt")
 	if err != nil {
 		t.Errorf("%v\n", err)
 	}
@@ -61,7 +61,7 @@ func TestGenerateIP(t *testing.T) {
 }
 
 func TestGenerateLinkYaml(t *testing.T) {
-	constellation, err := satellite.NewConstellation("../data/geodetic.txt")
+	constellation, err := satv1.NewConstellation("../data/geodetic.txt")
 	if err != nil {
 		t.Error(err)
 	}

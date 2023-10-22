@@ -8,7 +8,7 @@ import (
 	"ws/dtn-satellite-sdn/sdn/link"
 	"ws/dtn-satellite-sdn/sdn/pod"
 	"ws/dtn-satellite-sdn/sdn/route"
-	"ws/dtn-satellite-sdn/sdn/satellite"
+	satv1 "ws/dtn-satellite-sdn/sdn/type/v1"
 )
 
 // CLI Interface
@@ -43,7 +43,7 @@ func RunSatelliteSDN(inputFilePath string, expectedNodeNum int, timeout int) err
 // Delete current SDN
 func DelSatelliteSDN(inputFilePath string) error {
 	// Initialize constellation
-	constellation, err := satellite.NewConstellation(inputFilePath)
+	constellation, err := satv1.NewConstellation(inputFilePath)
 	if err != nil {
 		return fmt.Errorf("Generating constellation failed: %v", err)
 	}
@@ -60,7 +60,7 @@ func DelSatelliteSDN(inputFilePath string) error {
 // Return nameMap, edgeSet and routeTable
 func GenerateSatelliteConfig(inputFilePath string) (map[int]string, []link.LinkEdge, [][]int, error) {
 	// Initialize constellation
-	constellation, err := satellite.NewConstellation(inputFilePath)
+	constellation, err := satv1.NewConstellation(inputFilePath)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("Generating constellation failed: %v", err)
 	}

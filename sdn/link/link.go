@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"ws/dtn-satellite-sdn/sdn/satellite"
 	"ws/dtn-satellite-sdn/sdn/util"
 
+	satv1 "ws/dtn-satellite-sdn/sdn/type/v1"
 	topov1 "github.com/y-young/kube-dtn/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -84,7 +84,7 @@ func LinkSyncLoop(nameMap map[int]string, edgeSet []LinkEdge) error {
 	return nil
 }
 
-func isConnection(c *satellite.Constellation, sat1, sat2 string) (bool, error) {
+func isConnection(c *satv1.Constellation, sat1, sat2 string) (bool, error) {
 	// Find corresponding satellites
 	satellite1, err := c.FindSatelliteByName(sat1)
 	if err != nil {
@@ -169,7 +169,7 @@ func isConnection(c *satellite.Constellation, sat1, sat2 string) (bool, error) {
 }
 
 // Return and connGraph
-func GenerateConnGraph(c *satellite.Constellation) ([][]int) {
+func GenerateConnGraph(c *satv1.Constellation) ([][]int) {
 	// Initialize nameMap and connGraph
 	nodeCount := len(c.Satellites)
 	connGraph := [][]int{}
@@ -227,7 +227,7 @@ func GenerateConnGraph(c *satellite.Constellation) ([][]int) {
 	return connGraph
 }
 
-func GenerateDistanceMap(c *satellite.Constellation, connGraph [][]int) [][]float64 {
+func GenerateDistanceMap(c *satv1.Constellation, connGraph [][]int) [][]float64 {
 	// Initialize distanceMap (distance is 1e9 at first)
 	distanceMap := [][]float64{}
 	for i := 0; i < len(connGraph); i++ {

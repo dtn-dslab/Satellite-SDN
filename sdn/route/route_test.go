@@ -3,11 +3,11 @@ package route
 import (
 	"testing"
 	"ws/dtn-satellite-sdn/sdn/link"
-	"ws/dtn-satellite-sdn/sdn/satellite"
+	satv1 "ws/dtn-satellite-sdn/sdn/type/v1"
 )
 
 func TestComputeRoutes(t *testing.T) {
-	constellation, err := satellite.NewConstellation("../data/geodetic.txt")
+	constellation, err := satv1.NewConstellation("../data/geodetic.txt")
 	if err != nil {
 		t.Errorf("%v\n", err)
 	}

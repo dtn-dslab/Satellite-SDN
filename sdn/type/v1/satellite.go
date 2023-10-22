@@ -1,4 +1,4 @@
-package satellite
+package v1
 
 import (
 	"fmt"
@@ -9,7 +9,6 @@ import (
 )
 
 type Satellite struct {
-	UUID	  string
 	Name      string
 	Satellite gosate.Satellite
 }
