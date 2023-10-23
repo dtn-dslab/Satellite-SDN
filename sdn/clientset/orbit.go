@@ -16,6 +16,9 @@ type OrbitMeta struct {
 	// IndexUUIDMap stores index->UUID map
 	IndexUUIDMap map[int]string
 
+	// UUIDIndexMap stores UUID->index map
+	UUIDIndexMap map[string]int
+
 	// UUIDNodeMap stores UUID->Node map
 	UUIDNodeMap map[string]*satv2.Node
 
@@ -120,8 +123,8 @@ func NewOrbitInfo(params map[string]interface{}) *OrbitInfo {
 		)
 	}
 	// Update Metadata
-	info.RefreshMeta()
-	
+	info.Metadata = info.UpdateMeta()
+
 	return &info
 }
 
@@ -179,10 +182,11 @@ func (o *OrbitInfo) Update(params map[string]interface{}) *OrbitInfo {
 	return o
 }
 
-func (o *OrbitInfo) RefreshMeta() {
+func (o *OrbitInfo) UpdateMeta() *OrbitMeta {
 	cur_idx := 0
-	o.Metadata = &OrbitMeta{
+	meta := OrbitMeta{
 		IndexUUIDMap: make(map[int]string),
+		UUIDIndexMap: make(map[string]int),
 		UUIDNodeMap: make(map[string]*satv2.Node),
 		LowOrbitNum: 0,
 		HighOrbitNum: 0,
@@ -192,36 +196,42 @@ func (o *OrbitInfo) RefreshMeta() {
 	}
 	for idx1, group := range o.LowOrbitSats {
 		for idx2, node := range group.Nodes {
-			o.Metadata.LowOrbitNum++
-			o.Metadata.IndexUUIDMap[cur_idx] = node.UUID
-			o.Metadata.UUIDNodeMap[node.UUID] = &o.LowOrbitSats[idx1].Nodes[idx2]
+			meta.LowOrbitNum++
+			meta.IndexUUIDMap[cur_idx] = node.UUID
+			meta.UUIDIndexMap[node.UUID] = cur_idx
+			meta.UUIDNodeMap[node.UUID] = &o.LowOrbitSats[idx1].Nodes[idx2]
 			cur_idx++
 		}
 	}
 	for idx1, group := range o.HighOrbitSats {
 		for idx2, node := range group.Nodes {
-			o.Metadata.HighOrbitNum++
-			o.Metadata.IndexUUIDMap[cur_idx] = node.UUID
-			o.Metadata.UUIDNodeMap[node.UUID] = &o.HighOrbitSats[idx1].Nodes[idx2]
+			meta.HighOrbitNum++
+			meta.IndexUUIDMap[cur_idx] = node.UUID
+			meta.UUIDIndexMap[node.UUID] = cur_idx
+			meta.UUIDNodeMap[node.UUID] = &o.HighOrbitSats[idx1].Nodes[idx2]
 			cur_idx++
 		}
 	}
 	for idx, node := range o.GroundStations.Nodes {
-		o.Metadata.GroundStationNum++
-		o.Metadata.IndexUUIDMap[cur_idx] = node.UUID
-		o.Metadata.UUIDNodeMap[node.UUID] = &o.GroundStations.Nodes[idx]
+		meta.GroundStationNum++
+		meta.IndexUUIDMap[cur_idx] = node.UUID
+		meta.UUIDIndexMap[node.UUID] = cur_idx
+		meta.UUIDNodeMap[node.UUID] = &o.GroundStations.Nodes[idx]
 		cur_idx++
 	}
 	for idx, node := range o.Missiles.Nodes {
-		o.Metadata.MissileNum++
-		o.Metadata.IndexUUIDMap[cur_idx] = node.UUID
-		o.Metadata.UUIDNodeMap[node.UUID] = &o.Missiles.Nodes[idx]
+		meta.MissileNum++
+		meta.IndexUUIDMap[cur_idx] = node.UUID
+		meta.UUIDIndexMap[node.UUID] = cur_idx
+		meta.UUIDNodeMap[node.UUID] = &o.Missiles.Nodes[idx]
 		cur_idx++
 	}
 	for idx, node := range o.Enemies.Nodes {
-		o.Metadata.EnemyNum++
-		o.Metadata.IndexUUIDMap[cur_idx] = node.UUID
-		o.Metadata.UUIDNodeMap[node.UUID] = &o.Enemies.Nodes[idx]
+		meta.EnemyNum++
+		meta.IndexUUIDMap[cur_idx] = node.UUID
+		meta.UUIDIndexMap[node.UUID] = cur_idx
+		meta.UUIDNodeMap[node.UUID] = &o.Enemies.Nodes[idx]
 		cur_idx++
 	}
+	return &meta
 }
