@@ -12,6 +12,8 @@ const (
 	LOWORBIT = 1
 	HIGHORBIT = 2
 	GROUNDSTATION = 3
+	MISSILE = 4
+	ENEMY = 5
 )
 
 type NodeType int
@@ -28,15 +30,29 @@ type NodeInterface interface {
 }
 
 type Node struct {
-	Type NodeType `json:"type,omitempty"`
-	UUID string `json:"uuid,omitempty"`
-	Latitude float64 `json:"latitude,omitempty"`
-	Longitude float64 `json:"longitude,omitempty"`
-	Altitude float64 `json:"altitude,omitempty"`
+	Type NodeType 
+	UUID string 
+	TrackID int 
+	InTrackID int 
+	Latitude float64 
+	Longitude float64 
+	Altitude float64 
 }
 
-func NewNode(nodeType NodeType, params map[string]interface{}) *Node {
-	return &Node{
+func NewSatNode(nodeType NodeType, params map[string]interface{}) Node {
+	return Node{
+		Type: nodeType,
+		UUID: params["uuid"].(string),
+		TrackID: params["trackID"].(int),
+		InTrackID: params["inTrackID"].(int),
+		Latitude: params["lat"].(float64),
+		Longitude: params["long"].(float64),
+		Altitude: params["alt"].(float64),
+	}
+}
+
+func NewOtherNode(nodeType NodeType, params map[string]interface{}) Node {
+	return Node{
 		Type: nodeType,
 		UUID: params["uuid"].(string),
 		Latitude: params["lat"].(float64),
