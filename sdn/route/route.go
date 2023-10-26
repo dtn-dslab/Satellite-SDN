@@ -51,7 +51,7 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int) error {
 		route.Kind = "Route"
 		route.Name = nameMap[idx1]
 		for idx2 := range routeTable[idx1] {
-			if routeTable[idx1][idx2] != -1 {
+			if idx1 != idx2 {
 				// New routes for target Pod
 				route.Spec.SubPaths = append(
 					route.Spec.SubPaths,
@@ -61,18 +61,7 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int) error {
 						NextIP:   util.GetVxlanIP(uint(routeTable[idx1][idx2]), uint(idx1)),
 					},
 				)
-			} else if idx1 != idx2 {
-				// Exising routes for target Pod, rewrite it with global IP
-				route.Spec.SubPaths = append(
-					route.Spec.SubPaths, 
-					sdnv1.SubPath{
-						Name: nameMap[idx2],
-						TargetIP: util.GetGlobalIP(uint(idx2)),
-						NextIP: util.GetVxlanIP(uint(idx2), uint(idx1)),
-					},
-				)
 			}
-
 		}
 		if err := restClient.Post().
 			Namespace(namespace).
@@ -113,7 +102,7 @@ func ComputeRoutes(distanceMap [][]float64, threadNum int) [][]int {
 }
 
 // Return certain nodes' route table
-// routeTable: -1 means the target node is neighbour, other value means the next node packets are forwarded.
+// routeTable: means the next node packets forwarded.
 func ComputeRouteThread(distanceMap [][]float64, routeTable [][]int, threadID int, threadNum int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	nodeCount := len(distanceMap)
@@ -166,7 +155,7 @@ func ComputeRouteThread(distanceMap [][]float64, routeTable [][]int, threadID in
 				routeTable[idx][i] = dijkstraPath[i][0]
 			} else {
 				// Means that they connect to each other directly.
-				routeTable[idx][i] = -1
+				routeTable[idx][i] = i
 			}
 		}
 	}
