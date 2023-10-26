@@ -233,6 +233,13 @@ func GenerateConnGraph(c *satv1.Constellation) ([][]int) {
 		}
 	}
 
+	// Assert symmetry in connGraph
+	for idx1 := 0; idx1 < nodeCount; idx1++ {
+		for idx2 := idx1 + 1; idx2 < nodeCount; idx2++ {
+			connGraph[idx2][idx1] = connGraph[idx1][idx2]
+		}
+	}
+
 	return connGraph
 }
 
