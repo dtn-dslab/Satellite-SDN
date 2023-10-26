@@ -8,6 +8,7 @@ import (
 	"ws/dtn-satellite-sdn/sdn/util"
 
 	satv1 "ws/dtn-satellite-sdn/sdn/type/v1"
+
 	topov1 "github.com/y-young/kube-dtn/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -22,9 +23,9 @@ type LinkEdge struct {
 func LinkSyncLoop(nameMap map[int]string, edgeSet []LinkEdge) error {
 	// Initialize topologyList
 	topoList := topov1.TopologyList{}
-	podIntfMap := make([]int, len(nameMap))
+	// podIntfMap := make([]int, len(nameMap))
 	for idx := 0; idx < len(nameMap); idx++ {
-		podIntfMap[idx] = 1
+		// podIntfMap[idx] = 1
 		topoList.Items = append(topoList.Items, topov1.Topology{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: nameMap[idx],
@@ -34,13 +35,20 @@ func LinkSyncLoop(nameMap map[int]string, edgeSet []LinkEdge) error {
 
 	// Construct topologyList according to edgeSet
 	for _, edge := range edgeSet {
+		fromIntf, toIntf := nameMap[edge.From], nameMap[edge.To]
+		if len(fromIntf) > 15 {
+			fromIntf = fromIntf[:15]
+		}
+		if len(toIntf) > 15 {
+			toIntf = toIntf[:15]
+		}
 		topoList.Items[edge.From].Spec.Links = append(
 			topoList.Items[edge.From].Spec.Links,
 			topov1.Link{
 				UID:       (edge.From << 12) + edge.To,
 				PeerPod:   nameMap[edge.To],
-				LocalIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.From]),
-				PeerIntf:  fmt.Sprintf("sdneth%d", podIntfMap[edge.To]),
+				LocalIntf: toIntf,
+				PeerIntf:  fromIntf,
 				LocalIP:   util.GetVxlanIP(uint(edge.From), uint(edge.To)),
 				PeerIP:    util.GetVxlanIP(uint(edge.To), uint(edge.From)),
 			},
@@ -50,14 +58,14 @@ func LinkSyncLoop(nameMap map[int]string, edgeSet []LinkEdge) error {
 			topov1.Link{
 				UID:       (edge.From << 12) + edge.To,
 				PeerPod:   nameMap[edge.From],
-				LocalIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.To]),
-				PeerIntf:  fmt.Sprintf("sdneth%d", podIntfMap[edge.From]),
+				LocalIntf: fromIntf,
+				PeerIntf:  toIntf,
 				LocalIP:   util.GetVxlanIP(uint(edge.To), uint(edge.From)),
 				PeerIP:    util.GetVxlanIP(uint(edge.From), uint(edge.To)),
 			},
 		)
-		podIntfMap[edge.From]++
-		podIntfMap[edge.To]++
+		// podIntfMap[edge.From]++
+		// podIntfMap[edge.To]++
 	}
 
 	// Get current namespace
