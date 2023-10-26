@@ -22,23 +22,31 @@ import (
 
 var (
 	kubeconfig *string = nil
+	clientset *kubernetes.Clientset = nil
 	routeclient *rest.RESTClient = nil
 	topoclient *rest.RESTClient = nil
 )
 
 func init() {
-	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-	flag.Parse()
-
 	sdnv1.AddToScheme(scheme.Scheme)
 	topov1.AddToScheme(scheme.Scheme)
 }
 
 func GetClientset() (*kubernetes.Clientset, error) {
+	// If clientset is not empty, return clientset
+	if clientset != nil {
+		return clientset, nil
+	}
+
+	// init kubeconfig
+	if kubeconfig == nil {
+		if home := homedir.HomeDir(); home != "" {
+			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		} else {
+			kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		}
+	}
+
 	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
@@ -46,7 +54,8 @@ func GetClientset() (*kubernetes.Clientset, error) {
 	}
 
 	// create the clientset
-	return kubernetes.NewForConfig(config)
+	clientset, err = kubernetes.NewForConfig(config)
+	return clientset, err
 }
 
 func GetRouteClient() (*rest.RESTClient, error) {
@@ -54,6 +63,16 @@ func GetRouteClient() (*rest.RESTClient, error) {
 	if routeclient != nil {
 		return routeclient, nil
 	}
+
+	// init kubeconfig
+	if kubeconfig == nil {
+		if home := homedir.HomeDir(); home != "" {
+			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		} else {
+			kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		}
+	}
+
 	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
@@ -74,6 +93,16 @@ func GetTopoClient() (*rest.RESTClient, error) {
 	if topoclient != nil {
 		return topoclient, nil
 	}
+
+	// init kubeconfig
+	if kubeconfig == nil {
+		if home := homedir.HomeDir(); home != "" {
+			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		} else {
+			kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		}
+	}
+	
 	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
