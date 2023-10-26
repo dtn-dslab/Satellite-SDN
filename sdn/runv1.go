@@ -56,7 +56,6 @@ func DelSatelliteSDN(inputFilePath string) error {
 	return nil
 }
 
-// 
 // Return nameMap, edgeSet and routeTable
 func GenerateSatelliteConfig(inputFilePath string) (map[int]string, []link.LinkEdge, [][]int, error) {
 	// Initialize constellation
@@ -70,7 +69,7 @@ func GenerateSatelliteConfig(inputFilePath string) (map[int]string, []link.LinkE
 	connGraph := link.GenerateConnGraph(constellation)
 	edgeSet := link.ConvertConnGraphToEdgeSet(connGraph)
 	distanceMap := link.GenerateDistanceMap(constellation, connGraph)
-	routeTable := route.ComputeRoutes(distanceMap, 8)
+	routeTable := route.ComputeRoutes(distanceMap, 64)
 
 	return nameMap, edgeSet, routeTable, nil
 }

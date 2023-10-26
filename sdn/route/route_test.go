@@ -1,24 +1,31 @@
 package route
 
 import (
+	"reflect"
 	"testing"
-	"ws/dtn-satellite-sdn/sdn/link"
-	satv1 "ws/dtn-satellite-sdn/sdn/type/v1"
 )
 
 func TestComputeRoutes(t *testing.T) {
-	constellation, err := satv1.NewConstellation("../data/geodetic.txt")
-	if err != nil {
-		t.Errorf("%v\n", err)
+	var distanceMap = [][]float64{
+        {0, 100, 1200, 1e9, 1e9, 1e9},
+        {100, 0, 900, 300, 1e9, 1e9},
+        {1200, 900, 0, 400, 500, 1e9},
+        {1e9, 300, 400, 0, 1300, 1400},
+        {1e9, 1e9, 500, 1300, 0, 1500},
+        {1e9, 1e9, 1e9, 1400, 1500, 0},
+    }
+	var result = [][]int{
+		{0, 1, 1, 1, 1, 1},
+		{0, 1, 3, 3, 3, 3},
+		{3, 3, 2, 3, 4, 3},
+		{1, 1, 2, 3, 2, 5},
+		{2, 2, 2, 2, 4, 5},
+		{3, 3, 3, 3, 4, 5},
 	}
-
-	nameMap := constellation.GetNameMap()
-	connGraph := link.GenerateConnGraph(constellation)
-	edgeSet := link.ConvertConnGraphToEdgeSet(connGraph)
-	distanceMap := link.GenerateDistanceMap(constellation, connGraph)
-	t.Logf("NameMap: %v\n", nameMap)
-	t.Logf("edgeSet: %v\n", edgeSet)
-
-	routeTable := ComputeRoutes(distanceMap, 8)
-	t.Logf("RouteTable: %v\n", routeTable)
+	routeTable := ComputeRoutes(distanceMap, 6)
+	t.Log(routeTable)
+	t.Log(distanceMap)
+	if !reflect.DeepEqual(result, routeTable) {
+		t.Errorf("Result error!")
+	}
 }

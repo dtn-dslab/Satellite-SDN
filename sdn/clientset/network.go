@@ -16,6 +16,8 @@ type Network struct {
 	TopoGraph map[int][]int
 
 	// RouteGraph is the route connection graph.
+	// RouteGraph[i][j] means that the next hop of i to j is RouteGraph[i][j].
+	// if i == j, then RouteGraph[i][j] = 0
 	RouteGraph [][]int
 
 	// DistanceMap is the map of two nodes to the distance between them

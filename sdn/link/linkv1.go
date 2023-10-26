@@ -35,6 +35,7 @@ func LinkSyncLoop(nameMap map[int]string, edgeSet []LinkEdge) error {
 
 	// Construct topologyList according to edgeSet
 	for _, edge := range edgeSet {
+		// Intf's name are limited to no more than 15 bytes
 		fromIntf, toIntf := nameMap[edge.From], nameMap[edge.To]
 		if len(fromIntf) > 15 {
 			fromIntf = fromIntf[:15]

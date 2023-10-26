@@ -82,12 +82,7 @@ func ComputeRoutes(distanceMap [][]float64, threadNum int) [][]int {
 	nodeCount := len(distanceMap)
 	routeTable := [][]int{}
 	for i := 0; i < nodeCount; i++ {
-		arr := []int{}
-		for j := 0; j < nodeCount; j++ {
-			arr = append(arr, -1)
-		}
-		arr[i] = i
-		routeTable = append(routeTable, arr)
+		routeTable = append(routeTable, make([]int, nodeCount))
 	}
 
 	// Start goroutine to compute routes
@@ -107,54 +102,45 @@ func ComputeRouteThread(distanceMap [][]float64, routeTable [][]int, threadID in
 	defer wg.Done()
 	nodeCount := len(distanceMap)
 	for idx := threadID; idx < nodeCount; idx += threadNum {
-		// Initialize vector result
-		result, notFound := []float64{}, []float64{}
-		dijkstraPath := [][]int{}
-		for i := 0; i < nodeCount; i++ {
-			result = append(result, 1e9)
-			notFound = append(notFound, distanceMap[idx][i])
-			dijkstraPath = append(dijkstraPath, []int{})
-		}
-		result[idx] = 0
-		notFound[idx] = -1
+		// Initialize some variables
+		visited := make([]bool, nodeCount)
+		dist := make([]float64, nodeCount)
+		dijkstraPath := make([][]int, nodeCount)	// Record nodes in the middle(does not contain the leftmost and rightmost nodes)
+		copy(dist, distanceMap[idx])
+		visited[idx] = true
 
-		// Begin Dijkstra algorithm
+		// Use dijkstra algorithm to compute minimum distance and their routes
 		for i := 1; i < nodeCount; i++ {
-			// Find the shortest path point
-			var min float64 = 1e9
-			var minIndex = 0
+			// Use minDist and minIndex to record minimum distance and corresponding node's index
+			minDist, minIndex := 1e9, 0
+
+			// Iterate all nodes, find the next unvisted and nearst node to startNode.
 			for j := 0; j < nodeCount; j++ {
-				if notFound[j] > 0 && notFound[j] < min {
-					min = notFound[j]
+				if !visited[j] && dist[j] < minDist {
+					minDist = dist[j]
 					minIndex = j
 				}
 			}
 
-			// Store the shortest path point
-			result[minIndex] = min
-			notFound[minIndex] = -1
-
-			// Refresh notfound vector
+			// Iterate other nodes, update their minium distance to startNode
 			for j := 0; j < nodeCount; j++ {
-				if result[j] == 1e9 && distanceMap[minIndex][j] != 1e9 {
-					newDistance := result[minIndex] + distanceMap[minIndex][j]
-					if newDistance < notFound[j] {
-						notFound[j] = newDistance
-						dijkstraPath[j] = []int{}
-						dijkstraPath[j] = append(dijkstraPath[j], dijkstraPath[minIndex]...)
-						dijkstraPath[j] = append(dijkstraPath[j], minIndex)
-					}
+				if !visited[j] && dist[minIndex] + distanceMap[minIndex][j] < dist[j] {
+					dist[j] = dist[minIndex] + distanceMap[minIndex][j]
+					dijkstraPath[j] = append(dijkstraPath[minIndex], minIndex)
 				}
 			}
+
+			// Mark minIndex node as visited
+			visited[minIndex] = true
 		}
 
-		// Udpate routeTable
+		// Update next-hop table(routeTable)
 		for i := 0; i < nodeCount; i++ {
 			if len(dijkstraPath[i]) != 0 {
-				// Record the next hop's idx
+				// Nodes not connected to startNode directly
 				routeTable[idx][i] = dijkstraPath[i][0]
 			} else {
-				// Means that they connect to each other directly.
+				// Nodes connected to startNode directly
 				routeTable[idx][i] = i
 			}
 		}
