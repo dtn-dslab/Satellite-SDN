@@ -2,53 +2,73 @@ package clientset
 
 type NetworkInterface interface {
 	UpdateNetwork(info *OrbitInfo)
-	CheckConnection(uuid1, uuid2 string, uuidIndexMap map[string]int) bool
-	GetTopoInArray(indexUUIDMap map[int]string) [][]string
-	GetRouteFromAndTo(uuid1, uuid2 string, indexUUIDMap map[int]string, uuidIndexMap map[string]int) []string
-	GetRouteHops(uuid string, uuidList []string, indexUUIDMap map[int]string, uuidIndexMap map[string]int) []int
+	CheckConnection(idx1, idx2 int) bool
+	GetTopoInAscArray() [][]int
+	GetRouteFromAndTo(idx1, idx2 int) []int
+	GetRouteHops(idx int, idxList []int) []int
+	GetDistance(idx1, idx2 int) float64
 }
 
 type Network struct {
 	// TopoGraph is the topology connection graph.
-	TopoGraph [][]bool
+	// Key: (int) the index of node
+	// Value: ([]int) the index array of nodes connected to node(Key)
+	TopoGraph map[int][]int
 
 	// RouteGraph is the route connection graph.
 	RouteGraph [][]int
 
 	// DistanceMap is the map of two nodes to the distance between them
 	DistanceMap [][]float64
+
+	// Metadata is the metadata of current orbit info
+	Metadata *OrbitMeta
 }
 
 func (n *Network) UpdateNetwork(info *OrbitInfo) {
 
 }
 
-func (n *Network) CheckConnection(uuid1, uuid2 string, uuidIndexMap map[string]int) bool {
+func (n *Network) CheckConnection(idx1, idx2 int) bool {
+	for _, idx := range n.TopoGraph[idx1] {
+		if idx == idx2 {
+			return true
+		}
+	}
 	return false
 }
 
-func (n *Network) GetTopoInArray(indexUUIDMap map[int]string) [][]string {
-	return [][]string{}
-}
-
-func (n *Network) GetRouteFromAndTo(uuid1, uuid2 string, indexUUIDMap map[int]string, uuidIndexMap map[string]int) []string {
-	result := []string{}
-	mid_uuid := uuid1
-	for ; mid_uuid != uuid2; {
-		mid_index := uuidIndexMap[mid_uuid]
-		target_index := uuidIndexMap[uuid2]
-		mid_uuid = indexUUIDMap[n.RouteGraph[mid_index][target_index]]
-		result = append(result, mid_uuid)
+func (n *Network) GetTopoInAscArray() [][]int {
+	result := [][]int{}
+	for idx1, idxList := range n.TopoGraph {
+		for _, idx2 := range idxList {
+			if idx1 < idx2 {
+				result = append(result, []int{idx1, idx2})
+			}
+		}
 	}
 	return result
 }
 
-func (n *Network) GetRouteHops(uuid string, uuidList []string, indexUUIDMap map[int]string, uuidIndexMap map[string]int) []int {
+func (n *Network) GetRouteFromAndTo(idx1, idx2 int) []int {
 	result := []int{}
-	for _, target_uuid := range uuidList {
-		hopList := n.GetRouteFromAndTo(uuid, target_uuid, indexUUIDMap, uuidIndexMap)
+	for ; idx1 != idx2; {
+		idx1 = n.RouteGraph[idx1][idx2]
+		result = append(result, idx1)
+	}
+	return result
+}
+
+func (n *Network) GetRouteHops(idx int, idxList []int) []int {
+	result := []int{}
+	for _, target_idx := range idxList {
+		hopList := n.GetRouteFromAndTo(idx, target_idx)
 		result = append(result, len(hopList) - 1)
 	}
 	return result
+}
+
+func (n *Network) GetDistance(idx1, idx2 int) float64 {
+	return n.DistanceMap[idx1][idx2]
 }
 
