@@ -28,7 +28,7 @@ func PodSyncLoop(nameMap map[int]string) error {
 	// TODO(ws): Store pod name in database
 	for idx := 0; idx < len(nameMap); idx++ {
 		sat_name := "satellite"
-		image_name := "electronicwaste/podserver:v6"
+		image_name := "electronicwaste/podserver:v9"
 		image_pull_policy := "IfNotPresent"
 		var port int32 = 8080
 		// TODO(ws): figure out why FieldManager is needed
@@ -60,12 +60,9 @@ func PodSyncLoop(nameMap map[int]string) error {
 						},
 						Args: []string {
 							fmt.Sprintf(
-								"ifconfig eth0:sdneth0 %s netmask 255.255.255.255 up;" + 
-								"iptables -t nat -A OUTPUT -d 10.233.0.0/16 -j MARK --set-mark %d;" +
-								"iptables -t nat -A POSTROUTING -m mark --mark %d -d 10.233.0.0/16 -j SNAT --to-source %s;" +
-								"/podserver", 
-								util.GetGlobalIP(uint(idx)),
-								idx + 5000,
+								"export POD_IDX=%d;" +
+								"export GLOBAL_IP=%s;" +
+								"/bootstrap.sh", 
 								idx + 5000,
 								util.GetGlobalIP(uint(idx)),
 							),
