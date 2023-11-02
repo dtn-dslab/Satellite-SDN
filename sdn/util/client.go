@@ -1,8 +1,11 @@
 package util
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
+	"net/http"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -17,6 +20,7 @@ import (
 	"k8s.io/client-go/util/homedir"
 
 	sdnv1 "ws/dtn-satellite-sdn/api/v1"
+
 	topov1 "github.com/y-young/kube-dtn/api/v1"
 )
 
@@ -134,4 +138,21 @@ func GetNamespace() (string, error) {
 
 	namespace := strings.Trim(string(output), "\"")
 	return namespace, nil
+}
+
+func Fetch(url string) (map[string]interface{}, error) {
+	resp, err := http.Get(url)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("fetch %s error! StatusCode: %d, Details: %v", url, resp.StatusCode, err)
+	}
+	content, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response body error: %v", err)
+	}
+	var result map[string]interface{}
+	if err := json.Unmarshal(content, &result); err != nil {
+		return nil, fmt.Errorf("unmarshal failed: %v", err)
+	} else {
+		return result, nil
+	}
 }

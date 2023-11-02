@@ -36,6 +36,12 @@ type Network struct {
 
 const ThreadNums = 64
 
+func NewNetwork(info *OrbitInfo) *Network {
+	network := Network{}
+	network.UpdateNetwork(info)
+	return &network
+}
+
 func (n *Network) UpdateNetwork(info *OrbitInfo) {
 	// 1. Init some variables
 	n.Metadata = info.Metadata
@@ -177,7 +183,7 @@ func (n *Network) GetTopoInAscArray() [][]int {
 }
 
 func (n *Network) GetRouteFromAndTo(idx1, idx2 int) []int {
-	result := []int{}
+	result := []int{idx1}
 	for ; idx1 != idx2; {
 		idx1 = n.RouteGraph[idx1][idx2]
 		result = append(result, idx1)
@@ -189,7 +195,7 @@ func (n *Network) GetRouteHops(idx int, idxList []int) []int {
 	result := []int{}
 	for _, target_idx := range idxList {
 		hopList := n.GetRouteFromAndTo(idx, target_idx)
-		result = append(result, len(hopList) - 1)
+		result = append(result, len(hopList))
 	}
 	return result
 }

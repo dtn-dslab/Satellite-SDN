@@ -8,8 +8,10 @@ import (
 )
 
 type OrbitInterface interface {
-	Update(params map[string]interface{}) *OrbitInfo
+	Update(params map[string]interface{})
 	UpdateMeta()
+	GetUUIDIndexMap() map[string]int
+	GetIndexUUIDMap() map[int]string
 }
 
 type OrbitMeta struct {
@@ -118,7 +120,7 @@ func NewOrbitInfo(params map[string]interface{}) *OrbitInfo {
 // Function: Update
 // Description: Update orbit info with JSON params, also timestamp & uuidNodeMap in orbit metadata.
 // 1. params: Message from Qimeng
-func (o *OrbitInfo) Update(params map[string]interface{}) *OrbitInfo {
+func (o *OrbitInfo) Update(params map[string]interface{}) {
 	unixTimeStamp := params["unixTimeStamp"].(int64)
 	satellites := params["satellites"].([]map[string]interface{})
 	stations := params["stations"].([]map[string]interface{})
@@ -166,7 +168,6 @@ func (o *OrbitInfo) Update(params map[string]interface{}) *OrbitInfo {
 		o.Missiles.Nodes[idx] = uuidNodeMap[missile.UUID]
 		o.Metadata.UUIDNodeMap[missile.UUID] = &o.Missiles.Nodes[idx]
 	}
-	return o
 }
 
 // Function: UpdateMeta
@@ -218,4 +219,12 @@ func (o *OrbitInfo) UpdateMeta(unixTimeStamp int64) *OrbitMeta {
 		cur_idx++
 	}
 	return &meta
+}
+
+func (o *OrbitInfo) GetIndexUUIDMap() map[int]string {
+	return o.Metadata.IndexUUIDMap
+}
+
+func (o *OrbitInfo) GetUUIDIndexMap() map[string]int {
+	return o.Metadata.UUIDIndexMap
 }
