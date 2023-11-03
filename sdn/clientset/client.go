@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"ws/dtn-satellite-sdn/sdn/link"
+	"ws/dtn-satellite-sdn/sdn/pod"
+	"ws/dtn-satellite-sdn/sdn/route"
 	"ws/dtn-satellite-sdn/sdn/util"
 )
 
@@ -148,19 +151,28 @@ func (client *SDNClient) GetDistance(uuid1, uuid2 string) (float64, error) {
 // Function: ApplyPod
 // Description: Apply pods according to infos in SDNClient
 func (client *SDNClient) ApplyPod() error {
-	return nil
+	allocIdx, uuidAllocNodeMap := 0, map[string]string{}
+	kubeNodeList, _ := util.GetSlaveNodes()
+	// Currently, we only need to allocate low-orbit satellites in one group to the same physical node.
+	for _, group := range client.OrbitClient.LowOrbitSats {
+		for _, node := range group.Nodes {
+			uuidAllocNodeMap[node.UUID] = kubeNodeList[allocIdx]
+		}
+		allocIdx = (allocIdx + 1) % len(kubeNodeList)
+	}
+	return pod.PodSyncLoopV2(client.OrbitClient.GetIndexUUIDMap(), uuidAllocNodeMap)
 }
 
 // Function: ApplyTopo
 // Description: Apply topologies according to infos in SDNClient
 func (client *SDNClient) ApplyTopo() error {
-	return nil
+	return link.LinkSyncLoopV2(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray())
 }
 
 // Function: ApplyRoute
 // Description: Apply routes according to infos in SDNClient
 func (client *SDNClient) ApplyRoute() error {
-	return nil
+	return route.RouteSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.RouteGraph)
 }
 
 

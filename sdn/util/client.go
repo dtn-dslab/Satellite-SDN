@@ -140,6 +140,22 @@ func GetNamespace() (string, error) {
 	return namespace, nil
 }
 
+func GetSlaveNodes() ([]string, error) {
+	// Execute `kubectl get nodes | grep none` to get slave nodes
+	cmd := exec.Command("/bin/sh", "-c", "kubectl get nodes | grep none")
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return nil, fmt.Errorf("get nodes failed: %v", err)
+	} else {
+		result := []string{}
+		lines := strings.Split(string(output), "\n")
+		for _, line := range lines {
+			name, _, _ := strings.Cut(line, " ")
+			result = append(result, name)
+		}
+		return result, nil
+	}
+}
+
 func Fetch(url string) (map[string]interface{}, error) {
 	resp, err := http.Get(url)
 	if err != nil || resp.StatusCode != http.StatusOK {

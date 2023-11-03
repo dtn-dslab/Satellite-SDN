@@ -1,8 +1,14 @@
 package link
 
 import (
+	"context"
+	"fmt"
 	"time"
 	satv2 "ws/dtn-satellite-sdn/sdn/type/v2"
+	"ws/dtn-satellite-sdn/sdn/util"
+
+	topov1 "github.com/y-young/kube-dtn/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Function: GetMinDistanceNode
@@ -104,4 +110,79 @@ func GetTopoAmongLowOrbitGroup(
 	}
 
 	return result
+}
+
+// Function: LinkSyncLoopV2
+// Description: Apply topologies according to indexUUIDMap and topoAscArray
+// 1. indexUUIDMap: node's index -> node's uuid
+// 2. topoAscArray: Topology graph in ascend array
+func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int) error {
+	// Initialize topologyList
+	topoList := topov1.TopologyList{}
+	for idx := 0; idx < len(indexUUIDMap); idx++ {
+		// podIntfMap[idx] = 1
+		topoList.Items = append(topoList.Items, topov1.Topology{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: indexUUIDMap[idx],
+			},
+		})
+	}
+
+	// Construct topologyList according to topoAscArray
+	for _, linkPair := range topoAscArray {
+		edgeFrom, edgeTo := linkPair[0], linkPair[1]
+		// Intf's name are limited to no more than 15 bytes
+		fromIntf, toIntf := indexUUIDMap[edgeFrom], indexUUIDMap[edgeTo]
+		if len(fromIntf) > 15 {
+			fromIntf = fromIntf[:15]
+		}
+		if len(toIntf) > 15 {
+			toIntf = toIntf[:15]
+		}
+		topoList.Items[edgeFrom].Spec.Links = append(
+			topoList.Items[edgeFrom].Spec.Links,
+			topov1.Link{
+				UID:       (edgeFrom << 12) + edgeTo,
+				PeerPod:   indexUUIDMap[edgeTo],
+				LocalIntf: toIntf,
+				PeerIntf:  fromIntf,
+				LocalIP:   util.GetVxlanIP(uint(edgeFrom), uint(edgeTo)),
+				PeerIP:    util.GetVxlanIP(uint(edgeTo), uint(edgeFrom)),
+			},
+		)
+		topoList.Items[edgeTo].Spec.Links = append(
+			topoList.Items[edgeTo].Spec.Links, 
+			topov1.Link{
+				UID:       (edgeFrom << 12) + edgeTo,
+				PeerPod:   indexUUIDMap[edgeFrom],
+				LocalIntf: fromIntf,
+				PeerIntf:  toIntf,
+				LocalIP:   util.GetVxlanIP(uint(edgeTo), uint(edgeFrom)),
+				PeerIP:    util.GetVxlanIP(uint(edgeFrom), uint(edgeTo)),
+			},
+		)
+	}
+
+	// Get current namespace
+	namespace, err := util.GetNamespace()
+	if err != nil {
+		return fmt.Errorf("GET NAMESPACE ERROR: %v", err)
+	}
+
+	// Create topologyList with RESTClient
+	restClient, err := util.GetTopoClient()
+	if err != nil {
+		return fmt.Errorf("CONFIG ERROR: %v", err)
+	}
+	for _, topo := range topoList.Items {
+		if err := restClient.Post().
+			Namespace(namespace).
+			Resource("topologies").
+			Body(&topo).
+			Do(context.TODO()).
+			Into(nil); err != nil {
+			return fmt.Errorf("APPLY TOPOLOGY FAILURE: %v", err)
+		}
+	}
+	return nil
 }
