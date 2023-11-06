@@ -1,13 +1,16 @@
 package clientset
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"ws/dtn-satellite-sdn/sdn/link"
 	"ws/dtn-satellite-sdn/sdn/pod"
 	"ws/dtn-satellite-sdn/sdn/route"
 	"ws/dtn-satellite-sdn/sdn/util"
+
 )
 
 type ClientInterface interface {
@@ -17,7 +20,12 @@ type ClientInterface interface {
 	GetRouteFromAndTo(uuid1, uuid2 string) ([]string, error)
 	GetRouteHops(uuid, uuidList string) (string, error)
 	GetDistance(uuid1, uuid2 string) (float64, error)
-	ApplyPod() error
+	CheckConnectionHandler(w http.ResponseWriter, r *http.Request) 
+	GetTopoInAscArrayHandler(w http.ResponseWriter, r *http.Request)
+	GetRouteFromAndToHandler(w http.ResponseWriter, r *http.Request)
+	GetRouteHopsHandler(w http.ResponseWriter, r *http.Request)
+	GetDistanceHanlder(w http.ResponseWriter, r *http.Request)
+	ApplyPod(nodeNum int) error
 	ApplyTopo() error
 	ApplyRoute() error
 }
@@ -76,6 +84,24 @@ func (client *SDNClient) CheckConnection(uuid1, uuid2 string) (bool, error) {
 	}
 }
 
+// Function: CheckConnectionHandler
+// Description: Http handler wrapper for func CheckConnection
+func (client *SDNClient) CheckConnectionHandler(w http.ResponseWriter, r *http.Request) {
+	params := r.URL.Query()
+	uuid1, uuid2 := params.Get("src"), params.Get("dst")
+	if isTrue, err := client.CheckConnection(uuid1, uuid2); err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(err.Error()))
+	} else {
+		result := map[string]interface{}{
+			"result": isTrue,
+		}
+		content, _ := json.Marshal(&result)
+		w.WriteHeader(http.StatusOK)
+		w.Write(content)
+	}
+}
+
 // Function: GetTopoInAscArray
 // Description: Return topology graph in the form of array
 func (client *SDNClient) GetTopoInAscArray() ([][]string, error) {
@@ -86,6 +112,18 @@ func (client *SDNClient) GetTopoInAscArray() ([][]string, error) {
 		result = append(result, []string{indexUUIDMap[idx_pair[0]], indexUUIDMap[idx_pair[1]]})
 	}
 	return result, nil
+}
+
+// Function: GetTopoInAscArrayHandler
+// Description: Http handler wrapper for func GetTopoInAscArray
+func (client *SDNClient) GetTopoInAscArrayHandler(w http.ResponseWriter, r *http.Request) {
+	topoArr, _ := client.GetTopoInAscArray()
+	result := map[string]interface{} {
+		"result": topoArr,
+	}
+	content, _ := json.Marshal(&result)
+	w.WriteHeader(http.StatusOK)
+	w.Write(content)
 }
 
 // Function: GetRouteFromAndTo
@@ -106,6 +144,24 @@ func (client *SDNClient) GetRouteFromAndTo(uuid1, uuid2 string) ([]string, error
 			result = append(result, indexUUIDMap[idx])
 		}
 		return result, nil
+	}
+}
+
+// Function: GetRouteFromAndToHandler
+// Description: Description: Http handler wrapper for func GetRouteFromAndTo
+func (client *SDNClient) GetRouteFromAndToHandler(w http.ResponseWriter, r *http.Request) {
+	params := r.URL.Query()
+	uuid1, uuid2 := params.Get("src"), params.Get("dst")
+	if routeHops, err := client.GetRouteHops(uuid1, uuid2); err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(err.Error()))
+	} else{
+		result := map[string]interface{} {
+			"result": routeHops,
+		}
+		content, _ := json.Marshal(result)
+		w.WriteHeader(http.StatusOK)
+		w.Write(content)
 	}
 }
 
@@ -133,6 +189,24 @@ func (client *SDNClient) GetRouteHops(uuid, uuidList string) (string, error) {
 	return result, nil
 }
 
+// Function: GetRouteHopsHanlder
+// Description: Http hanlder wrapper for func GetRouteHops
+func (client *SDNClient) GetRouteHopsHandler(w http.ResponseWriter, r *http.Request) {
+	params := r.URL.Query()
+	uuid, uuidList := params.Get("preId"), params.Get("saIdList")
+	if routeHops, err := client.GetRouteHops(uuid, uuidList); err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(err.Error()))
+	} else {
+		result := map[string]interface{} {
+			"result": routeHops,
+		}
+		content, _ := json.Marshal(result)
+		w.WriteHeader(http.StatusOK)
+		w.Write(content)
+	}
+}
+
 // Function: GetDistance
 // Description: Return the distance from Node(uuid1) to Node(uuid2)
 // 1. uuid1: The src node's uuid.
@@ -148,11 +222,29 @@ func (client *SDNClient) GetDistance(uuid1, uuid2 string) (float64, error) {
 	}
 }
 
+// Function: GetDistanceHandler
+// Description: Http handler wrapper for GetDistance
+func (client *SDNClient) GetDistanceHanlder(w http.ResponseWriter, r *http.Request) {
+	params := r.URL.Query()
+	uuid1, uuid2 := params.Get("src"), params.Get("dst")
+	if distance, err := client.GetDistance(uuid1, uuid2); err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(err.Error()))
+	} else {
+		result := map[string]interface{} {
+			"result": distance,
+		}
+		content, _ := json.Marshal(result)
+		w.WriteHeader(http.StatusOK)
+		w.Write(content)
+	}
+}
+
 // Function: ApplyPod
 // Description: Apply pods according to infos in SDNClient
-func (client *SDNClient) ApplyPod() error {
+func (client *SDNClient) ApplyPod(nodeNum int) error {
 	allocIdx, uuidAllocNodeMap := 0, map[string]string{}
-	kubeNodeList, _ := util.GetSlaveNodes()
+	kubeNodeList, _ := util.GetSlaveNodes(nodeNum)
 	// Currently, we only need to allocate low-orbit satellites in one group to the same physical node.
 	for _, group := range client.OrbitClient.LowOrbitSats {
 		for _, node := range group.Nodes {

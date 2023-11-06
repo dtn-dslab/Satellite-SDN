@@ -17,7 +17,7 @@ func TestFetch(t *testing.T) {
 }
 
 func TestGetNodes(t *testing.T) {
-	if nameList, err := GetSlaveNodes(); err != nil {
+	if nameList, err := GetSlaveNodes(3); err != nil {
 		t.Error(err)
 	} else {
 		t.Log(nameList)

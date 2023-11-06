@@ -20,7 +20,6 @@ import (
 	"k8s.io/client-go/util/homedir"
 
 	sdnv1 "ws/dtn-satellite-sdn/api/v1"
-
 	topov1 "github.com/y-young/kube-dtn/api/v1"
 )
 
@@ -140,7 +139,7 @@ func GetNamespace() (string, error) {
 	return namespace, nil
 }
 
-func GetSlaveNodes() ([]string, error) {
+func GetSlaveNodes(nodeNum int) ([]string, error) {
 	// Execute `kubectl get nodes | grep none` to get slave nodes
 	cmd := exec.Command("/bin/sh", "-c", "kubectl get nodes | grep none")
 	if output, err := cmd.CombinedOutput(); err != nil {
@@ -148,7 +147,8 @@ func GetSlaveNodes() ([]string, error) {
 	} else {
 		result := []string{}
 		lines := strings.Split(string(output), "\n")
-		for _, line := range lines {
+		for idx := 0; idx < len(lines) && idx < nodeNum; idx++ {
+			line := lines[idx]
 			name, _, _ := strings.Cut(line, " ")
 			result = append(result, name)
 		}
