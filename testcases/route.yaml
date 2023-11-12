@@ -6,14 +6,37 @@ items:
     name: sdnone
   kind: Route
   spec:
+    podip: 10.244.5.37
     subpaths:
     - name: sdntwo
-      nextip: 128.0.1.1/24
+      targetip: 10.233.0.2
+      nextip: 12.12.12.2/24
+    - name: sdnthree
+      targetip: 10.233.0.3
+      nextip: 12.12.12.2/24
 - apiVersion: sdn.dtn-satellite-sdn/v1
   metadata:
    name: sdntwo
   kind: Route
   spec:
+    podip: 10.244.5.36
     subpaths:
     - name: sdnone
-      nextip: 128.0.0.1/24
+      targetip: 10.233.0.1
+      nextip: 12.12.12.1/24
+    - name: sdnthree
+      targetip: 10.233.0.3
+      nextip: 23.23.23.2/24
+- apiVersion: sdn.dtn-satellite-sdn/v1
+  metadata:
+   name: sdnthree
+  kind: Route
+  spec:
+    podip: 10.244.5.38
+    subpaths:
+    - name: sdnone
+      targetip: 10.233.0.1
+      nextip: 23.23.23.1/24
+    - name: sdntwo
+      targetip: 10.233.0.2
+      nextip: 23.23.23.1/24

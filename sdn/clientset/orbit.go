@@ -61,10 +61,17 @@ type OrbitInfo struct {
 // Description: Create orbit info with JSON params
 // 1. params: Message from Qimeng
 func NewOrbitInfo(params map[string]interface{}) *OrbitInfo {
-	unixTimeStamp := params["unixTimeStamp"].(int64)
-	satellites := params["satellites"].([]map[string]interface{})
-	stations := params["stations"].([]map[string]interface{})
-	missiles := params["missiles"].([]map[string]interface{})
+	unixTimeStamp := (int64) (params["unixTimeStamp"].(float64))
+	var satellites, stations, missiles []map[string]interface{}
+	for _, intf := range params["satellites"].([]interface{}) {
+		satellites = append(satellites, intf.(map[string]interface{}))
+	}
+	for _, intf := range params["stations"].([]interface{}) {
+		stations = append(stations, intf.(map[string]interface{}))
+	}
+	for _, intf := range params["missiles"].([]interface{}) {
+		missiles = append(missiles, intf.(map[string]interface{}))
+	}
 	info := OrbitInfo {
 		LowOrbitSats: make(map[int]*satv2.Group),
 		HighOrbitSats: make(map[int]*satv2.Group),
@@ -121,10 +128,17 @@ func NewOrbitInfo(params map[string]interface{}) *OrbitInfo {
 // Description: Update orbit info with JSON params, also timestamp & uuidNodeMap in orbit metadata.
 // 1. params: Message from Qimeng
 func (o *OrbitInfo) Update(params map[string]interface{}) {
-	unixTimeStamp := params["unixTimeStamp"].(int64)
-	satellites := params["satellites"].([]map[string]interface{})
-	stations := params["stations"].([]map[string]interface{})
-	missiles := params["missiles"].([]map[string]interface{})
+	unixTimeStamp := (int64) (params["unixTimeStamp"].(float64))
+	var satellites, stations, missiles []map[string]interface{}
+	for _, intf := range params["satellites"].([]interface{}) {
+		satellites = append(satellites, intf.(map[string]interface{}))
+	}
+	for _, intf := range params["stations"].([]interface{}) {
+		stations = append(stations, intf.(map[string]interface{}))
+	}
+	for _, intf := range params["missiles"].([]interface{}) {
+		missiles = append(missiles, intf.(map[string]interface{}))
+	}
 	// Initialize uuid->Node map
 	uuidNodeMap := make(map[string]satv2.Node)
 	for _, sat := range satellites {

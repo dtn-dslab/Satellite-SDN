@@ -5,12 +5,10 @@ items:
   kind: Pod
   metadata:
     name: sdnone
-    labels:
-      app: sdn-test
   spec:
     containers:
     - name: sdn1
-      image: electronicwaste/podserver:v6
+      image: electronicwaste/podserver:v9
       imagePullPolicy: IfNotPresent
       ports:
       - containerPort: 8080
@@ -18,21 +16,21 @@ items:
       - /bin/sh
       - -c
       args:
-      - /podserver
-    nodeSelector:
-      kubernetes.io/hostname: node1.dtn.lab
+      - export POD_IDX=5001;export GLOBAL_IP=10.233.0.1;/bootstrap.sh
+      securityContext:
+       capabilities:
+        add:
+        - NET_ADMIN
     
               
 - apiVersion: v1
   kind: Pod
   metadata:
     name: sdntwo
-    labels:
-      app: sdn-test
   spec:
     containers:
     - name: sdn2
-      image: electronicwaste/podserver:v6
+      image: electronicwaste/podserver:v9
       imagePullPolicy: IfNotPresent
       ports:
       - containerPort: 8080
@@ -40,6 +38,29 @@ items:
       - /bin/sh
       - -c
       args:
-      - /podserver
-    nodeSelector:
-      kubernetes.io/hostname: node2.dtn.lab
+      - export POD_IDX=5002;export GLOBAL_IP=10.233.0.2;/bootstrap.sh
+      securityContext:
+       capabilities:
+        add:
+        - NET_ADMIN
+
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    name: sdnthree
+  spec:
+    containers:
+    - name: sdn3
+      image: electronicwaste/podserver:v9
+      imagePullPolicy: IfNotPresent
+      ports:
+      - containerPort: 8080
+      command:
+      - /bin/sh
+      - -c
+      args:
+      - export POD_IDX=5003;export GLOBAL_IP=10.233.0.3;/bootstrap.sh
+      securityContext:
+       capabilities:
+        add:
+        - NET_ADMIN

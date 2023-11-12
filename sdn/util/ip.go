@@ -57,7 +57,7 @@ func GetVxlanIP(myID, peerID uint) string {
 }
 
 // Allocate global IP to pod according to its idx
-// IP = 10.233.((idx >> 8)&0xff).(idx&0xff)/32
+// IP = 10.233.((idx >> 8)&0xff).(idx&0xff)
 func GetGlobalIP(myID uint) string {
 	netIP := make([]string, 4)
 	netIP[0] = "10"
