@@ -30,14 +30,14 @@ func PodSyncLoopV2(indexUUIDMap map[int]string, uuidAllocNodeMap map[string]stri
 	// Construct Pods
 	podList := []*v1.PodApplyConfiguration{}
 	for index, uuid := range indexUUIDMap {
-		sat_name := uuid
+		sat_name := "sdn" + uuid
 		image_name := "electronicwaste/podserver:v9"
 		image_pull_policy := "IfNotPresent"
 		var port int32 = 8080
 		podConfig := &v1.PodApplyConfiguration{}
 		podConfig = podConfig.WithAPIVersion("v1")
 		podConfig = podConfig.WithKind("Pod")
-		podConfig = podConfig.WithName(uuid)
+		podConfig = podConfig.WithName(sat_name)
 		podConfig = podConfig.WithSpec(
 			&v1.PodSpecApplyConfiguration{
 				Containers: []v1.ContainerApplyConfiguration {

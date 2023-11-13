@@ -13,6 +13,7 @@ const (
 	HIGHORBIT = 2
 	GROUNDSTATION = 3
 	MISSILE = 4
+	FIXED = 5
 )
 
 type NodeType int

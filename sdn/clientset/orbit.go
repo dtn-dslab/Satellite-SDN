@@ -57,12 +57,11 @@ type OrbitInfo struct {
 	Missiles *satv2.Group 
 }
 
-// Function: NewOrbitInfo
-// Description: Create orbit info with JSON params
-// 1. params: Message from Qimeng
-func NewOrbitInfo(params map[string]interface{}) *OrbitInfo {
-	unixTimeStamp := (int64) (params["unixTimeStamp"].(float64))
-	var satellites, stations, missiles []map[string]interface{}
+// Function: ParseParamsQimeng
+// Description: Parsing params in http response for Qimeng
+// 1. param: Message from Qimeng
+func ParseParamsQimeng(params map[string]interface{}) (unixTimeStamp int64, satellites, stations, missiles []map[string]interface{}) {
+	unixTimeStamp = (int64) (params["unixTimeStamp"].(float64))
 	for _, intf := range params["satellites"].([]interface{}) {
 		satellites = append(satellites, intf.(map[string]interface{}))
 	}
@@ -72,6 +71,14 @@ func NewOrbitInfo(params map[string]interface{}) *OrbitInfo {
 	for _, intf := range params["missiles"].([]interface{}) {
 		missiles = append(missiles, intf.(map[string]interface{}))
 	}
+	return
+}
+
+// Function: NewOrbitInfo
+// Description: Create orbit info with JSON params
+// 1. params: Message from Qimeng
+func NewOrbitInfo(params map[string]interface{}) *OrbitInfo {
+	unixTimeStamp, satellites, stations, missiles := ParseParamsQimeng(params)
 	info := OrbitInfo {
 		LowOrbitSats: make(map[int]*satv2.Group),
 		HighOrbitSats: make(map[int]*satv2.Group),
@@ -120,7 +127,7 @@ func NewOrbitInfo(params map[string]interface{}) *OrbitInfo {
 	}
 	// Update Metadata
 	info.Metadata = info.UpdateMeta(unixTimeStamp)
-
+	
 	return &info
 }
 
@@ -128,17 +135,7 @@ func NewOrbitInfo(params map[string]interface{}) *OrbitInfo {
 // Description: Update orbit info with JSON params, also timestamp & uuidNodeMap in orbit metadata.
 // 1. params: Message from Qimeng
 func (o *OrbitInfo) Update(params map[string]interface{}) {
-	unixTimeStamp := (int64) (params["unixTimeStamp"].(float64))
-	var satellites, stations, missiles []map[string]interface{}
-	for _, intf := range params["satellites"].([]interface{}) {
-		satellites = append(satellites, intf.(map[string]interface{}))
-	}
-	for _, intf := range params["stations"].([]interface{}) {
-		stations = append(stations, intf.(map[string]interface{}))
-	}
-	for _, intf := range params["missiles"].([]interface{}) {
-		missiles = append(missiles, intf.(map[string]interface{}))
-	}
+	unixTimeStamp, satellites, stations, missiles := ParseParamsQimeng(params)
 	// Initialize uuid->Node map
 	uuidNodeMap := make(map[string]satv2.Node)
 	for _, sat := range satellites {
@@ -160,7 +157,7 @@ func (o *OrbitInfo) Update(params map[string]interface{}) {
 		uuidNodeMap[node.UUID] = node
 	}
 	// Update variables in o.Metadata
-	o.Metadata.TimeStamp = time.Unix(unixTimeStamp / 1000, 0)
+	o.Metadata.TimeStamp = time.UnixMilli(unixTimeStamp)
 	// Update node and uuidNodeMap in o
 	for idx1, group := range o.LowOrbitSats {
 		for idx2, node := range group.Nodes {
@@ -190,7 +187,7 @@ func (o *OrbitInfo) Update(params map[string]interface{}) {
 func (o *OrbitInfo) UpdateMeta(unixTimeStamp int64) *OrbitMeta {
 	cur_idx := 0
 	meta := OrbitMeta{
-		TimeStamp: time.Unix(unixTimeStamp / 1000, 0),
+		TimeStamp: time.UnixMilli(unixTimeStamp),
 		IndexUUIDMap: make(map[int]string),
 		UUIDIndexMap: make(map[string]int),
 		UUIDNodeMap: make(map[string]*satv2.Node),
