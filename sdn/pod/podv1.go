@@ -30,7 +30,8 @@ func PodSyncLoop(nameMap map[int]string) error {
 		sat_name := nameMap[idx]
 		image_name := "electronicwaste/podserver:v9"
 		image_pull_policy := "IfNotPresent"
-		var port int32 = 8080
+		var port, prometheus_port int32 = 8080, 2112
+		prometheus_port_name := "prometheus"
 		// TODO(ws): figure out why FieldManager is needed
 		// When we delete key 'FieldManager', error occurred:
 		// `PatchOptions.meta.k8s.io "" is invalid: fieldManager: Required value`
@@ -52,6 +53,10 @@ func PodSyncLoop(nameMap map[int]string) error {
 						Ports: []v1.ContainerPortApplyConfiguration {
 							{
 								ContainerPort: &port,
+							},
+							{
+								Name: &prometheus_port_name,
+								ContainerPort: &prometheus_port,
 							},
 						},
 						Command: []string {

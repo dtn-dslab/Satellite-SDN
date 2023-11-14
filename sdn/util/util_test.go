@@ -7,11 +7,11 @@ import (
 
 const (
 	testURL1 = "http://10.0.0.11:32121/Location/Location"
-	testURL2 = "http://localhost:9999/test"
+	testURL2 = "http://localhost:30100/location"
 )
 
 func TestFetch(t *testing.T) {
-	if result, err := Fetch(testURL1); err != nil {
+	if result, err := Fetch(testURL2); err != nil {
 		t.Error(err)
 	} else {
 		t.Log(reflect.TypeOf(result["result"]))

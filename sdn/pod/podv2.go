@@ -33,7 +33,8 @@ func PodSyncLoopV2(indexUUIDMap map[int]string, uuidAllocNodeMap map[string]stri
 		sat_name := uuid
 		image_name := "electronicwaste/podserver:v9"
 		image_pull_policy := "IfNotPresent"
-		var port int32 = 8080
+		var port, prometheus_port int32 = 8080, 2112
+		prometheus_port_name := "prometheus"
 		podConfig := &v1.PodApplyConfiguration{}
 		podConfig = podConfig.WithAPIVersion("v1")
 		podConfig = podConfig.WithKind("Pod")
@@ -48,6 +49,10 @@ func PodSyncLoopV2(indexUUIDMap map[int]string, uuidAllocNodeMap map[string]stri
 						Ports: []v1.ContainerPortApplyConfiguration {
 							{
 								ContainerPort: &port,
+							},
+							{
+								Name: &prometheus_port_name,
+								ContainerPort: &prometheus_port,
 							},
 						},
 						Command: []string {

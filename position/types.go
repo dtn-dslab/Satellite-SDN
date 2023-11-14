@@ -1,40 +1,40 @@
 package position
 
 type RetParams struct {
-	TimeStamp int64			`json:"unixTimeStamp,omitempty"`
-	Satellites []SatParams	`json:"satellites,omitempty"`
-	Missiles []MSParams		`json:"missiles,omitempty"`
-	Stations []GSParams		`json:"stations,omitempty"`
-	FixedNodes []FixedParams`json:"fixedNodes,omitempty"`
+	TimeStamp int64			`json:"unixTimeStamp"`
+	Satellites []SatParams	`json:"satellites"`
+	Missiles []MSParams		`json:"missiles"`
+	Stations []GSParams		`json:"stations"`
+	FixedNodes []FixedParams`json:"fixedNodes"`
 }
 
 type SatParams struct {
-	SatGroupID int 		`json:"satGroupID,omitempty"`
-	TrackID int			`json:"trackID,omitempty"`
-	InTrackID int		`json:"inTrackID,omitempty"`
-	UUID string			`json:"uuid,omitempty"`
-	Longitude float64	`json:"lon,omitempty"`
-	Latitude float64	`json:"lat,omitempty"`
-	Altitude float64	`json:"height,omitempty"`
+	SatGroupID int 		`json:"satGroupID"`
+	TrackID int			`json:"trackID"`
+	InTrackID int		`json:"inTrackID"`
+	UUID string			`json:"uuid"`
+	Longitude float64	`json:"lon"`
+	Latitude float64	`json:"lat"`
+	Altitude float64	`json:"height"`
 }
 
 type GSParams struct {
-	UUID string			`json:"uuid,omitempty"`
-	Longitude float64	`json:"lon,omitempty"`
-	Latitude float64	`json:"lat,omitempty"`
-	Altitude float64	`json:"height,omitempty"`
+	UUID string			`json:"uuid"`
+	Longitude float64	`json:"lon"`
+	Latitude float64	`json:"lat"`
+	Altitude float64	`json:"height"`
 }
 
 type FixedParams struct {
-	UUID string			`json:"uuid,omitempty"`
-	Longitude float64	`json:"lon,omitempty"`
-	Latitude float64	`json:"lat,omitempty"`
-	Altitude float64	`json:"height,omitempty"`
+	UUID string			`json:"uuid"`
+	Longitude float64	`json:"lon"`
+	Latitude float64	`json:"lat"`
+	Altitude float64	`json:"height"`
 }
 
 type MSParams struct {
-	UUID string			`json:"uuid,omitempty"`
-	Longitude float64	`json:"lon,omitempty"`
-	Latitude float64	`json:"lat,omitempty"`
-	Altitude float64	`json:"height,omitempty"`
+	UUID string			`json:"uuid"`
+	Longitude float64	`json:"lon"`
+	Latitude float64	`json:"lat"`
+	Altitude float64	`json:"height"`
 }

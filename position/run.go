@@ -2,6 +2,7 @@ package position
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"net/http"
 	"time"
@@ -10,8 +11,8 @@ import (
 )
 
 type PositionServerInterface interface {
-	GetLocation(http.ResponseWriter, *http.Request)
-	ComputeSats() []SatParams
+	GetLocationHanlder(http.ResponseWriter, *http.Request)
+	ComputeSatsCache()
 	UpdateCache() error
 }
 
@@ -41,7 +42,9 @@ func NewPositionServer(inputPath string, num int) *PositionServer {
 	}
 }
 
-func (ps *PositionServer) GetLocation(w http.ResponseWriter, req *http.Request) {
+// Function: GetLocationHanlder
+// Description: A http hanlder for getting location of all types of node.
+func (ps *PositionServer) GetLocationHandler(w http.ResponseWriter, req *http.Request) {
 	ps.timeStamp = time.Now()
 	if err := ps.UpdateCache(); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -57,11 +60,14 @@ func (ps *PositionServer) GetLocation(w http.ResponseWriter, req *http.Request) 
 	for _, sat := range ps.cache.satCache {
 		retParams.Satellites = append(retParams.Satellites, *sat)
 	}
+	fmt.Println(retParams)
 	content, _ := json.Marshal(&retParams)
 	w.WriteHeader(http.StatusOK)
 	w.Write(content)
 }
 
+// Function: UpdateCache
+// Description: Update cache in ps.cache for future use.
 func (ps *PositionServer) UpdateCache() error {
 	if ps.cache == nil {
 		ps.cache = &PositionCache{
@@ -93,6 +99,8 @@ func (ps *PositionServer) UpdateCache() error {
 	return nil
 }
 
+// Function: ComputeSatsCache
+// Description: Compute all of sats' information when cache is recently created.
 func (ps *PositionServer) ComputeSatsCache() {
 	// Initialze satCache
 	year, month, day, hour, minute, second :=
@@ -112,10 +120,12 @@ func (ps *PositionServer) ComputeSatsCache() {
 			Longitude: long,
 			Latitude: lat,
 			Altitude: alt,
+			TrackID: -1,
+			InTrackID: -1,
 		}
 		ps.cache.satCache[sat.Name] = &s
 	}
-	// Classify Satellites(alloc TrackID)
+	// Classify Satellites
 	curTrackID, remainNode := 0, len(ps.cache.satCache)
 	classifySatsUUIDList := [][]string{}
 	visited := make(map[string]bool, remainNode)
@@ -137,7 +147,6 @@ func (ps *PositionServer) ComputeSatsCache() {
 				if len(classifySatsUUIDList) <= curTrackID {
 					classifySatsUUIDList = append(classifySatsUUIDList, []string{})
 				}
-				sat.TrackID = curTrackID	// Assign TrackID
 				classifySatsUUIDList[curTrackID] = append(classifySatsUUIDList[curTrackID], key) // Update result
 				visited[key] = true	// Mark as visited
 				remainNode--
@@ -145,8 +154,8 @@ func (ps *PositionServer) ComputeSatsCache() {
 		}
 		curTrackID++
 	}
-	// Alloc InTrackID(bubble sort and assign index to InTrackID)
-	for _, keyGroup := range classifySatsUUIDList {
+	// Bubble sort satellites according to Angle to get inTrackID
+	for trackID, keyGroup := range classifySatsUUIDList {
 		for idx1 := 0; idx1 < len(keyGroup) - 1; idx1++ {
 			for idx2 := 0; idx2 < len(keyGroup) - 1 - idx1; idx2++ {
 				sat1, _ := ps.c.FindSatelliteByName(keyGroup[idx2])
@@ -156,16 +165,25 @@ func (ps *PositionServer) ComputeSatsCache() {
 				}
 			}
 		}
-		
+		// Assign TrackID and InTrackID
+	
+		for inTrackID, key := range keyGroup {
+			ps.cache.satCache[key].TrackID = trackID
+			ps.cache.satCache[key].InTrackID = inTrackID
+		}
 	}
 }
 
-func RunPositionModule(inputPath string, num int) {
+// Function: RunPositionModule
+// Description: Start Position Computing Module.
+// 1. inputPath: TLE file's path.
+// 2. fixedNum: The number of fixed network pod expected to generate.
+func RunPositionModule(inputPath string, fixedNum int) {
 	// Construct Constellation from file 
-	ps := NewPositionServer(inputPath, num)
+	ps := NewPositionServer(inputPath, fixedNum)
 
 	// Bind handler and start server
-	http.HandleFunc("/location", ps.GetLocation)
+	http.HandleFunc("/location", ps.GetLocationHandler)
 	http.ListenAndServe(":30100", nil)
 	
 }

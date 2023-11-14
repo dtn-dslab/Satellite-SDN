@@ -1,9 +1,12 @@
 package position
 
+import "fmt"
+
 
 
 func GetGroundStation() []GSParams {
 	return []GSParams{
+		// Shanghai Sheshan Station.
 		{
 			UUID: "station",
 			Longitude: 121.4476,
@@ -25,5 +28,14 @@ func GetMissiles() []MSParams {
 }
 
 func GetFixedNodes(num int) []FixedParams {
-	return nil
+	result := make([]FixedParams, 0, num)
+	for idx := 0; idx < num; idx++ {
+		result = append(result, FixedParams{
+			UUID: "fixed" + fmt.Sprint(idx),
+			Longitude: 0.0 + 0.1 * float64(idx),
+			Latitude: 0.0 + 0.05 * float64(idx),
+			Altitude: 0.0,
+		})
+	}
+	return result
 }
