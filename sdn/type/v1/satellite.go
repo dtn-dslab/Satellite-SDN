@@ -8,6 +8,8 @@ import (
 	gosate "github.com/joshuaferrara/go-satellite"
 )
 
+const NAME_PREFIX_V1 = "sdn"
+
 type Satellite struct {
 	Name      string
 	Satellite gosate.Satellite
@@ -24,7 +26,7 @@ func NewStatellite(name, line1, line2 string) (*Satellite, error) {
 		return nil, fmt.Errorf("The second line of satellite's TLE is empty\n")
 	}
 	return &Satellite{
-		Name:      name,
+		Name:      NAME_PREFIX_V1 + name,
 		Satellite: gosate.TLEToSat(line1, line2, "wgs84"),
 	}, nil
 }

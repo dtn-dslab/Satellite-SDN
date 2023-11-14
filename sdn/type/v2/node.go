@@ -14,6 +14,8 @@ const (
 	GROUNDSTATION = 3
 	MISSILE = 4
 	FIXED = 5
+
+	NAME_PREFIX_V2 = "sdn"
 )
 
 type NodeType int
@@ -42,7 +44,7 @@ type Node struct {
 func NewSatNode(nodeType NodeType, params map[string]interface{}) Node {
 	return Node{
 		Type: nodeType,
-		UUID: params["uuid"].(string),
+		UUID: NAME_PREFIX_V2 + params["uuid"].(string),
 		TrackID: (int) (params["trackID"].(float64)),
 		InTrackID: (int) (params["inTrackID"].(float64)),
 		Latitude: params["lat"].(float64),

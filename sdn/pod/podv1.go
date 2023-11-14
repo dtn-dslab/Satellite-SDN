@@ -27,7 +27,7 @@ func PodSyncLoop(nameMap map[int]string) error {
 	// construct pods
 	// TODO(ws): Store pod name in database
 	for idx := 0; idx < len(nameMap); idx++ {
-		sat_name := "sdn" + nameMap[idx]
+		sat_name := nameMap[idx]
 		image_name := "electronicwaste/podserver:v9"
 		image_pull_policy := "IfNotPresent"
 		var port int32 = 8080

@@ -2,6 +2,7 @@ package position
 
 import (
 	"encoding/json"
+	"math"
 	"net/http"
 	"time"
 
@@ -69,10 +70,7 @@ func (ps *PositionServer) UpdateCache() error {
 			gsCache: GetGroundStation(),
 			fixedCache: GetFixedNodes(ps.fixedNum),
 		}
-		satParams := ps.ComputeSats()
-		for _, sat := range satParams {
-			ps.cache.satCache[sat.UUID] = &sat
-		}
+		ps.ComputeSatsCache()
 	} else {
 		// Update longitude, latitude, altitude in Satellites
 		year, month, day, hour, minute, second :=
@@ -95,8 +93,71 @@ func (ps *PositionServer) UpdateCache() error {
 	return nil
 }
 
-func (ps *PositionServer) ComputeSats() []SatParams {
-	return nil
+func (ps *PositionServer) ComputeSatsCache() {
+	// Initialze satCache
+	year, month, day, hour, minute, second :=
+			ps.timeStamp.Year(),
+			int(ps.timeStamp.Month()),
+			ps.timeStamp.Day(),
+			ps.timeStamp.Hour(),
+			ps.timeStamp.Minute(),
+			ps.timeStamp.Second()
+	for _, sat := range ps.c.Satellites {
+		long, lat, alt := sat.LocationAtTime(
+			year, month, day,
+			hour, minute, second,
+		)
+		s := SatParams{
+			UUID: sat.Name,
+			Longitude: long,
+			Latitude: lat,
+			Altitude: alt,
+		}
+		ps.cache.satCache[sat.Name] = &s
+	}
+	// Classify Satellites(alloc TrackID)
+	curTrackID, remainNode := 0, len(ps.cache.satCache)
+	classifySatsUUIDList := [][]string{}
+	visited := make(map[string]bool, remainNode)
+	for k, _ := range ps.cache.satCache {
+		visited[k] = false
+	}
+	for remainNode > 0 {
+		var standardHeight float64
+		// Find standard height for this track
+		for key, sat := range ps.cache.satCache {
+			if !visited[key] {
+				standardHeight = sat.Altitude
+				break
+			}
+		}
+		// Iterate to find sats in the same track(|height - standardHeight| < 500)
+		for key, sat := range ps.cache.satCache {
+			if !visited[key] && math.Abs(sat.Altitude - standardHeight) < 500 {
+				if len(classifySatsUUIDList) <= curTrackID {
+					classifySatsUUIDList = append(classifySatsUUIDList, []string{})
+				}
+				sat.TrackID = curTrackID	// Assign TrackID
+				classifySatsUUIDList[curTrackID] = append(classifySatsUUIDList[curTrackID], key) // Update result
+				visited[key] = true	// Mark as visited
+				remainNode--
+			}
+		}
+		curTrackID++
+	}
+	// Alloc InTrackID(bubble sort and assign index to InTrackID)
+	for _, keyGroup := range classifySatsUUIDList {
+		for idx1 := 0; idx1 < len(keyGroup) - 1; idx1++ {
+			for idx2 := 0; idx2 < len(keyGroup) - 1 - idx1; idx2++ {
+				sat1, _ := ps.c.FindSatelliteByName(keyGroup[idx2])
+				sat2, _ := ps.c.FindSatelliteByName(keyGroup[idx2 + 1])
+				if sat1.AngleDeltaAtTime(sat2, year, month, day, hour, minute, second) > 0 {
+					keyGroup[idx2], keyGroup[idx2 + 1] = keyGroup[idx2 + 1], keyGroup[idx2]
+				}
+			}
+		}
+		
+	}
 }
 
 func RunPositionModule(inputPath string, num int) {

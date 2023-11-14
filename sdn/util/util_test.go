@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	testURL1 = "http://10.0.0.11:31968/Loaction/Loaction"
+	testURL1 = "http://10.0.0.11:32121/Location/Location"
 	testURL2 = "http://localhost:9999/test"
 )
 
