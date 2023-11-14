@@ -28,9 +28,10 @@ func PodSyncLoop(nameMap map[int]string) error {
 	// TODO(ws): Store pod name in database
 	for idx := 0; idx < len(nameMap); idx++ {
 		sat_name := "satellite"
-		image_name := "yy77yy/podserver:v2"
+		image_name := "yy77yy/podserver:v4"
 		image_pull_policy := "IfNotPresent"
-		var port int32 = 8080
+		var port, prometheus_port int32 = 8080, 2112
+		prometheus_port_name := "prometheus"
 		// TODO(ws): figure out why FieldManager is needed
 		// When we delete key 'FieldManager', error occurred:
 		// `PatchOptions.meta.k8s.io "" is invalid: fieldManager: Required value`
@@ -57,6 +58,10 @@ func PodSyncLoop(nameMap map[int]string) error {
 							{
 								ContainerPort: &port,
 							},
+							{
+								Name:          &prometheus_port_name,
+								ContainerPort: &prometheus_port,
+							},
 						},
 						Command: []string{
 							"/bin/sh",
@@ -64,7 +69,7 @@ func PodSyncLoop(nameMap map[int]string) error {
 						},
 						Args: []string{
 							fmt.Sprintf(
-								"./start.sh %s %d", util.GetGlobalIP(uint(idx)), idx+5000,
+								"chmod 777 start.sh; ./start.sh %s %d", util.GetGlobalIP(uint(idx)), idx+5000,
 							),
 						},
 						SecurityContext: &v1.SecurityContextApplyConfiguration{
