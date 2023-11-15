@@ -28,9 +28,9 @@ func PodSyncLoop(nameMap map[int]string) error {
 	// TODO(ws): Store pod name in database
 	for idx := 0; idx < len(nameMap); idx++ {
 		sat_name := "satellite"
-		image_name := "yy77yy/podserver:v4"
+		image_name := "yy77yy/podserver:v5"
 		image_pull_policy := "IfNotPresent"
-		var port, prometheus_port int32 = 8080, 2112
+		var port, prometheus_port, flow_port int32 = 8080, 2112, 8081
 		prometheus_port_name := "prometheus"
 		// TODO(ws): figure out why FieldManager is needed
 		// When we delete key 'FieldManager', error occurred:
@@ -61,6 +61,9 @@ func PodSyncLoop(nameMap map[int]string) error {
 							{
 								Name:          &prometheus_port_name,
 								ContainerPort: &prometheus_port,
+							},
+							{
+								ContainerPort: &flow_port,
 							},
 						},
 						Command: []string{
