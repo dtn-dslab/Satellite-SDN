@@ -44,7 +44,7 @@ type Node struct {
 func NewSatNode(nodeType NodeType, params map[string]interface{}) Node {
 	return Node{
 		Type: nodeType,
-		UUID: NAME_PREFIX_V2 + params["uuid"].(string),
+		UUID: params["uuid"].(string),
 		TrackID: (int) (params["trackID"].(float64)),
 		InTrackID: (int) (params["inTrackID"].(float64)),
 		Latitude: params["lat"].(float64),

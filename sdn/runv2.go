@@ -28,9 +28,9 @@ func RunSDNServer(url string, expectedNodeNum int, timeout int) error {
 
 	// Bind http request with handler
 	sdnHandlerMap := map[string]HttpHandler {
-		"getTopologyGraph": client.GetTopoInAscArrayHandler,
-		"getRoute": client.GetRouteFromAndToHandler,
-		"getConnection": client.GetRouteHopsHandler,
+		"/getTopologyGraph": client.GetTopoInAscArrayHandler,
+		"/getRoute": client.GetRouteFromAndToHandler,
+		"/getConnection": client.GetRouteHopsHandler,
 	}
 	for url, handler := range sdnHandlerMap {
 		http.HandleFunc(url, handler)

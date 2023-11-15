@@ -57,7 +57,7 @@ func GetTopoInGroup(group *satv2.Group) map[string][]string {
 // 3. indexUUIDMap: map from index to uuid
 // 4. uuidIndexMap: map from uuid to index
 func GetTopoAmongLowOrbitGroup(
-	curGroup *satv2.Group, distanceMap [][]float64,
+	curGroup *satv2.Group, lowOrbitNum int, distanceMap [][]float64,
 	indexUUIDMap map[int]string, uuidIndexMap map[string]int) map[string][]string {
 	// Initialize some variables
 	result := map[string][]string{}
@@ -71,7 +71,7 @@ func GetTopoAmongLowOrbitGroup(
 		nodeIdx := uuidIndexMap[node.UUID]
 		// Get the nearst satellite
 		minDistance, minIdx := 1e9, -1
-		for otherNodeIdx, distance := range distanceMap[nodeIdx] {
+		for otherNodeIdx := 0; otherNodeIdx < lowOrbitNum; otherNodeIdx++ {
 			// If otherNodeIdx is in curNodeIdxs, continue
 			flag := false
 			for _, index := range curNodeIdxs {
@@ -82,14 +82,14 @@ func GetTopoAmongLowOrbitGroup(
 			}
 			if flag { continue }
 			// Update min_distance & min_idx
-			if distance < minDistance {
-				minDistance = distance
+			if distanceMap[nodeIdx][otherNodeIdx] < minDistance {
+				minDistance = distanceMap[nodeIdx][otherNodeIdx]
 				minIdx = otherNodeIdx
 			}
 		}
 		// Get the second nearst satellite
 		secondMinDistance, secondMinIdx := 1e9, -1
-		for otherNodeIdx, distance := range distanceMap[nodeIdx] {
+		for otherNodeIdx := 0; otherNodeIdx < lowOrbitNum; otherNodeIdx++ {
 			// If otherNodeIdx is in curNodeIdxs or equals to MinIdx, continue
 			flag := false
 			for _, index := range curNodeIdxs {
@@ -100,8 +100,8 @@ func GetTopoAmongLowOrbitGroup(
 			}
 			if flag { continue }
 			// Update second_min_distance & second_min_idx
-			if distance < secondMinDistance {
-				secondMinDistance = distance
+			if distanceMap[nodeIdx][otherNodeIdx] < secondMinDistance {
+				secondMinDistance = distanceMap[nodeIdx][otherNodeIdx]
 				secondMinIdx = otherNodeIdx
 			}
 		}

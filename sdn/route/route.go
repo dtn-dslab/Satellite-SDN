@@ -126,8 +126,7 @@ func ComputeRouteThread(distanceMap [][]float64, routeTable [][]int, threadID in
 			for j := 0; j < nodeCount; j++ {
 				if !visited[j] && dist[minIndex] + distanceMap[minIndex][j] < dist[j] {
 					dist[j] = dist[minIndex] + distanceMap[minIndex][j]
-					copy(dijkstraPath[j], dijkstraPath[minIndex])
-					dijkstraPath[j] = append(dijkstraPath[j], minIndex)
+					dijkstraPath[j] = append(dijkstraPath[minIndex], minIndex)
 				}
 			}
 

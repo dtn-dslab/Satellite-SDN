@@ -1,10 +1,11 @@
 package clientset
 
 import (
+	"fmt"
 	"sync"
 
-	"ws/dtn-satellite-sdn/sdn/route"
 	"ws/dtn-satellite-sdn/sdn/link"
+	"ws/dtn-satellite-sdn/sdn/route"
 	satv2 "ws/dtn-satellite-sdn/sdn/type/v2"
 )
 
@@ -88,7 +89,7 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 				curTrackID := lowOrbitGroupKeys[trackIDIdx]
 				sameOrbitTopoMap := link.GetTopoInGroup(info.LowOrbitSats[curTrackID])
 				diffOrbitTopoMap := link.GetTopoAmongLowOrbitGroup(
-					info.LowOrbitSats[curTrackID], n.DistanceMap, 
+					info.LowOrbitSats[curTrackID],  n.Metadata.LowOrbitNum, n.DistanceMap,
 					n.Metadata.IndexUUIDMap, n.Metadata.UUIDIndexMap,
 				)
 				// Apply result to TopoGraph
@@ -124,6 +125,7 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 	// Iterate GroundStations
 	for _, gs := range info.GroundStations.Nodes {
 		sat_uuid := link.GetMinDistanceNode(&gs, lowOrbitGroups, n.Metadata.TimeStamp)
+		fmt.Printf("%s -> %s\n", gs.UUID, sat_uuid)
 		gs_idx, sat_idx := n.Metadata.UUIDIndexMap[gs.UUID], n.Metadata.UUIDIndexMap[sat_uuid]
 		n.TopoGraph[gs_idx][sat_idx] = true
 		n.TopoGraph[sat_idx][gs_idx] = true
@@ -131,6 +133,7 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 	// Iterate Missiles
 	for _, missile := range info.Missiles.Nodes {
 		sat_uuid := link.GetMinDistanceNode(&missile, lowOrbitGroups, n.Metadata.TimeStamp)
+		fmt.Printf("%s -> %s\n", missile.UUID, sat_uuid)
 		missile_idx, sat_idx := n.Metadata.UUIDIndexMap[missile.UUID], n.Metadata.UUIDIndexMap[sat_uuid]
 		n.TopoGraph[missile_idx][sat_idx] = true
 		n.TopoGraph[sat_idx][missile_idx] = true
@@ -163,6 +166,10 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 	wg.Wait()
 	// Call route calculation func in package route
 	n.RouteGraph = route.ComputeRoutes(distanceMapForRoute, ThreadNums)
+
+	fmt.Println(n.Metadata.IndexUUIDMap)
+	fmt.Println(n.TopoGraph)
+	fmt.Println(n.RouteGraph)
 }
 
 func (n *Network) CheckConnection(idx1, idx2 int) bool {

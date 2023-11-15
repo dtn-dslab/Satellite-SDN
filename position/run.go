@@ -170,6 +170,8 @@ func (ps *PositionServer) ComputeSatsCache() {
 			ps.cache.satCache[key].InTrackID = inTrackID
 		}
 	}
+
+	fmt.Println(classifySatsUUIDList)
 }
 
 // Function: RunPositionModule

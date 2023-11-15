@@ -1,4 +1,4 @@
-# !/bin/sh
+# !/bin/bash
 
 kubectl delete pod --all
 kubectl delete topology --all
