@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kubedtn
+  labels:
+    app.kubernetes.io/name: daemonset
+    app.kubernetes.io/instance: daemon
+    app.kubernetes.io/component: daemon
+    app.kubernetes.io/created-by: kube-dtn
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: kube-dtn
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: daemon
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: daemon
+    spec:
+      hostNetwork: true
+      hostPID: true
+      hostIPC: true
+      serviceAccountName: kubedtn
+      nodeSelector:
+        beta.kubernetes.io/arch: amd64
+      tolerations:
+        - operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: kubedtn
+          securityContext:
+            privileged: true
+          image: y-young/kubedtn:latest
+          imagePullPolicy: IfNotPresent
+          command: ["./entrypoint.sh"]
+          resources:
+            limits:
+              memory: 10G
+            requests:
+              cpu: 200m
+              memory: 1G
+          env:
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: INTER_NODE_LINK_TYPE
+              value: VXLAN
+            - name: TCPIP_BYPASS
+              value: "1"
+          volumeMounts:
+            - name: cni-cfg
+              mountPath: /etc/cni/net.d
+            - name: cni-bin
+              mountPath: /opt/cni/bin
+            - name: cni-files
+              mountPath: /opt/kubedtn
+            - name: var-run-netns
+              mountPath: /var/run/netns
+              mountPropagation: Bidirectional
+            - name: sysfs
+              mountPath: /sys/fs
+              mountPropagation: Bidirectional
+          ports:
+            - containerPort: 51111
+              name: grpc
+            - containerPort: 51112
+              name: http
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: cni-bin
+          hostPath:
+            path: /opt/cni/bin
+        - name: cni-files
+          hostPath:
+            path: /opt/kubedtn
+        - name: cni-cfg
+          hostPath:
+            path: /etc/cni/net.d
+        - name: var-run-netns
+          hostPath:
+            path: /var/run/netns
+        - name: sysfs
+          hostPath:
+            path: /sys/fs

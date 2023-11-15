@@ -120,8 +120,6 @@ func (ps *PositionServer) ComputeSatsCache() {
 			Longitude: long,
 			Latitude: lat,
 			Altitude: alt,
-			TrackID: -1,
-			InTrackID: -1,
 		}
 		ps.cache.satCache[sat.Name] = &s
 	}
