@@ -23,51 +23,53 @@ func PodSyncLoop(nameMap map[int]string) error {
 	if err != nil {
 		return fmt.Errorf("GET NAMESPACE ERROR: %v", err)
 	}
-	
+
 	// construct pods
 	// TODO(ws): Store pod name in database
 	for idx := 0; idx < len(nameMap); idx++ {
 		sat_name := "satellite"
-		image_name := "electronicwaste/podserver:v6"
+		image_name := "yy77yy/podserver:v4"
 		image_pull_policy := "IfNotPresent"
-		var port int32 = 8080
+		var port, prometheus_port int32 = 8080, 2112
+		prometheus_port_name := "prometheus"
 		// TODO(ws): figure out why FieldManager is needed
 		// When we delete key 'FieldManager', error occurred:
 		// `PatchOptions.meta.k8s.io "" is invalid: fieldManager: Required value`
 		// Related issue: https://github.com/kubernetes/client-go/issues/1036
-		opts := metav1.ApplyOptions {
+		opts := metav1.ApplyOptions{
 			FieldManager: "application/apply-patch",
+		}
+		labels := map[string]string{
+			"k8s-app": "iperf",
 		}
 		podConfig := &v1.PodApplyConfiguration{}
 		podConfig = podConfig.WithAPIVersion("v1")
 		podConfig = podConfig.WithKind("Pod")
 		podConfig = podConfig.WithName(nameMap[idx])
+		podConfig = podConfig.WithLabels(labels)
 		podConfig = podConfig.WithSpec(
 			&v1.PodSpecApplyConfiguration{
-				Containers: []v1.ContainerApplyConfiguration {
+				Containers: []v1.ContainerApplyConfiguration{
 					{
-						Name: &sat_name,
-						Image: &image_name,
+						Name:            &sat_name,
+						Image:           &image_name,
 						ImagePullPolicy: (*corev1.PullPolicy)(&image_pull_policy),
-						Ports: []v1.ContainerPortApplyConfiguration {
+						Ports: []v1.ContainerPortApplyConfiguration{
 							{
 								ContainerPort: &port,
 							},
+							{
+								Name:          &prometheus_port_name,
+								ContainerPort: &prometheus_port,
+							},
 						},
-						Command: []string {
+						Command: []string{
 							"/bin/sh",
 							"-c",
 						},
-						Args: []string {
+						Args: []string{
 							fmt.Sprintf(
-								"ifconfig eth0:sdneth0 %s netmask 255.255.255.255 up;" + 
-								"iptables -t nat -A OUTPUT -d 10.233.0.0/16 -j MARK --set-mark %d;" +
-								"iptables -t nat -A POSTROUTING -m mark --mark %d -d 10.233.0.0/16 -j SNAT --to-source %s;" +
-								"/podserver", 
-								util.GetGlobalIP(uint(idx)),
-								idx + 5000,
-								idx + 5000,
-								util.GetGlobalIP(uint(idx)),
+								"chmod 777 start.sh; ./start.sh %s %d", util.GetGlobalIP(uint(idx)), idx+5000,
 							),
 						},
 						SecurityContext: &v1.SecurityContextApplyConfiguration{
@@ -89,4 +91,3 @@ func PodSyncLoop(nameMap map[int]string) error {
 
 	return nil
 }
-
