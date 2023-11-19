@@ -141,7 +141,7 @@ func ComputeRouteThread(distanceMap [][]float64, routeTable [][]int, threadID in
 				routeTable[idx][i] = dijkstraPath[i][0]
 			} else {
 				// Nodes connected to startNode directly
-				routeTable[idx][i] = i
+				routeTable[idx][i] = idx
 			}
 		}
 	}
