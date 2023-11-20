@@ -175,6 +175,11 @@ func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int) error {
 		return fmt.Errorf("CONFIG ERROR: %v", err)
 	}
 	for _, topo := range topoList.Items {
+		// fmt.Printf("%s -> ", topo.Name)
+		// for _, link := range topo.Spec.Links {
+		// 	fmt.Print(link.PeerPod)
+		// }
+		// fmt.Print("\n")
 		if err := restClient.Post().
 			Namespace(namespace).
 			Resource("topologies").

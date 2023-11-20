@@ -152,7 +152,7 @@ func (client *SDNClient) GetRouteFromAndTo(uuid1, uuid2 string) ([]string, error
 func (client *SDNClient) GetRouteFromAndToHandler(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	uuid1, uuid2 := params.Get("src"), params.Get("dst")
-	if routeHops, err := client.GetRouteHops(uuid1, uuid2); err != nil {
+	if routeHops, err := client.GetRouteFromAndTo(uuid1, uuid2); err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte(err.Error()))
 	} else{
@@ -245,6 +245,7 @@ func (client *SDNClient) GetDistanceHanlder(w http.ResponseWriter, r *http.Reque
 func (client *SDNClient) ApplyPod(nodeNum int) error {
 	allocIdx, uuidAllocNodeMap := 0, map[string]string{}
 	kubeNodeList, _ := util.GetSlaveNodes(nodeNum)
+	log.Println("Applying pod...")
 	// Currently, we only need to allocate low-orbit satellites in one group to the same physical node.
 	for _, group := range client.OrbitClient.LowOrbitSats {
 		for _, node := range group.Nodes {
@@ -258,12 +259,14 @@ func (client *SDNClient) ApplyPod(nodeNum int) error {
 // Function: ApplyTopo
 // Description: Apply topologies according to infos in SDNClient
 func (client *SDNClient) ApplyTopo() error {
+	log.Println("Applying topology...")
 	return link.LinkSyncLoopV2(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray())
 }
 
 // Function: ApplyRoute
 // Description: Apply routes according to infos in SDNClient
 func (client *SDNClient) ApplyRoute() error {
+	log.Println("Applying route...")
 	return route.RouteSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.RouteGraph)
 }
 

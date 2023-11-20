@@ -105,9 +105,12 @@ func ComputeRouteThread(distanceMap [][]float64, routeTable [][]int, threadID in
 		// Initialize some variables
 		visited := make([]bool, nodeCount)
 		dist := make([]float64, nodeCount)
-		dijkstraPath := make([][]int, nodeCount)	// Record nodes in the middle(does not contain the leftmost and rightmost nodes)
 		copy(dist, distanceMap[idx])
 		visited[idx] = true
+		dijkstraPath := make([]int, nodeCount)	// Record next hop nodes(default is node(idx))
+		for i := range dijkstraPath {
+			dijkstraPath[i] = i
+		}
 
 		// Use dijkstra algorithm to compute minimum distance and their routes
 		for i := 1; i < nodeCount; i++ {
@@ -126,23 +129,17 @@ func ComputeRouteThread(distanceMap [][]float64, routeTable [][]int, threadID in
 			for j := 0; j < nodeCount; j++ {
 				if !visited[j] && dist[minIndex] + distanceMap[minIndex][j] < dist[j] {
 					dist[j] = dist[minIndex] + distanceMap[minIndex][j]
-					dijkstraPath[j] = append(dijkstraPath[minIndex], minIndex)
+					dijkstraPath[j] = dijkstraPath[minIndex]
 				}
 			}
-
+			
 			// Mark minIndex node as visited
 			visited[minIndex] = true
 		}
 
 		// Update next-hop table(routeTable)
 		for i := 0; i < nodeCount; i++ {
-			if len(dijkstraPath[i]) != 0 {
-				// Nodes not connected to startNode directly
-				routeTable[idx][i] = dijkstraPath[i][0]
-			} else {
-				// Nodes connected to startNode directly
-				routeTable[idx][i] = idx
-			}
+			routeTable[idx][i] = dijkstraPath[i]
 		}
 	}
 }
