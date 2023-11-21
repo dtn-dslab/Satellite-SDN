@@ -125,7 +125,6 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 	// Iterate GroundStations
 	for _, gs := range info.GroundStations.Nodes {
 		sat_uuid := link.GetMinDistanceNode(&gs, lowOrbitGroups, n.Metadata.TimeStamp)
-		fmt.Printf("%s -> %s\n", gs.UUID, sat_uuid)
 		gs_idx, sat_idx := n.Metadata.UUIDIndexMap[gs.UUID], n.Metadata.UUIDIndexMap[sat_uuid]
 		n.TopoGraph[gs_idx][sat_idx] = true
 		n.TopoGraph[sat_idx][gs_idx] = true
@@ -133,7 +132,6 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 	// Iterate Missiles
 	for _, missile := range info.Missiles.Nodes {
 		sat_uuid := link.GetMinDistanceNode(&missile, lowOrbitGroups, n.Metadata.TimeStamp)
-		fmt.Printf("%s -> %s\n", missile.UUID, sat_uuid)
 		missile_idx, sat_idx := n.Metadata.UUIDIndexMap[missile.UUID], n.Metadata.UUIDIndexMap[sat_uuid]
 		n.TopoGraph[missile_idx][sat_idx] = true
 		n.TopoGraph[sat_idx][missile_idx] = true

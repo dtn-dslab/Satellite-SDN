@@ -31,7 +31,7 @@ func PodSyncLoopV2(indexUUIDMap map[int]string, uuidAllocNodeMap map[string]stri
 	podList := []*v1.PodApplyConfiguration{}
 	for index, uuid := range indexUUIDMap {
 		sat_name := uuid
-		image_name := "electronicwaste/podserver:v9"
+		image_name := "electronicwaste/podserver:v10"
 		image_pull_policy := "IfNotPresent"
 		var port, prometheus_port int32 = 8080, 2112
 		prometheus_port_name := "prometheus"

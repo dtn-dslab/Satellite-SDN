@@ -77,7 +77,7 @@ func (r *RouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		add, del, update = r.CalcDiff(route.Status.SubPaths, route.Spec.SubPaths)
 	}
 
-	log.Info("route %s -> add: %v, del: %v, update: %v", route.Name, add, del, update)
+	log.Info("Route changed", "add", add, "del", del, "update", update)
 
 	if err := r.DelSubpaths(ctx, route.Spec.PodIP, del); err != nil {
 		log.Error(err, "Failed to delete subpaths")
