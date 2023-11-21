@@ -77,6 +77,8 @@ func (r *RouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		add, del, update = r.CalcDiff(route.Status.SubPaths, route.Spec.SubPaths)
 	}
 
+	log.Info("route %s -> add: %v, del: %v, update: %v", route.Name, add, del, update)
+
 	if err := r.DelSubpaths(ctx, route.Spec.PodIP, del); err != nil {
 		log.Error(err, "Failed to delete subpaths")
 		return ctrl.Result{}, err
@@ -98,7 +100,7 @@ func (r *RouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		log.Error(err, "Failed to update status")
 		return ctrl.Result{}, err
 	}
-
+	
 	return ctrl.Result{}, nil
 }
 
@@ -111,15 +113,6 @@ func (r *RouteReconciler) AddSubpaths(ctx context.Context, podIP string, subpath
 		return nil
 	}
 
-	// Get pod's ip by invoking `GetPodIP` func periodically
-	// var podIP string
-	// var err error
-	// for podIP, err = GetPodIP(podName); err != nil; {
-	// 	log.Info("Retry!")
-	// 	duration := 3000 + rand.Int31()%2000
-	// 	time.Sleep(time.Duration(duration) * time.Millisecond)
-	// 	podIP, err = GetPodIP(podName)
-	// }
 	postURL := "http://" + podIP + ":8080" + "/route/apply"
 	jsonVal, _ := json.Marshal(subpaths)
 	resp, err := http.Post(
@@ -145,15 +138,6 @@ func (r *RouteReconciler) DelSubpaths(ctx context.Context, podIP string, subpath
 		return nil
 	}
 
-	// Get pod's ip by invoking `GetPodIP` func periodically
-	// var podIP string
-	// var err error
-	// for podIP, err = GetPodIP(podName); err != nil; {
-	// 	log.Info("Retry!")
-	// 	duration := 3000 + rand.Int31()%2000
-	// 	time.Sleep(time.Duration(duration) * time.Millisecond)
-	// 	podIP, err = GetPodIP(podName)
-	// }
 	postURL := "http://" + podIP + ":8080" + "/route/del"
 	jsonVal, _ := json.Marshal(subpaths)
 	resp, err := http.Post(
@@ -179,15 +163,6 @@ func (r *RouteReconciler) UpdateSubpaths(ctx context.Context, podIP string, subp
 		return nil
 	}
 
-	// Get pod's ip by invoking `GetPodIP` func periodically
-	// var podIP string
-	// var err error
-	// for podIP, err = GetPodIP(podName); err != nil; {
-	// 	log.Info("Retry!")
-	// 	duration := 3000 + rand.Int31()%2000
-	// 	time.Sleep(time.Duration(duration) * time.Millisecond)
-	// 	podIP, err = GetPodIP(podName)
-	// }
 	postURL := "http://" + podIP + ":8080" + "/route/update"
 	jsonVal, _ := json.Marshal(subpaths)
 	resp, err := http.Post(
