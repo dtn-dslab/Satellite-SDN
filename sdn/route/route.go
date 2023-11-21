@@ -7,22 +7,22 @@ import (
 	"math/rand"
 	"sync"
 	"time"
-	"ws/dtn-satellite-sdn/sdn/util"
 
+	"ws/dtn-satellite-sdn/sdn/util"
 	sdnv1 "ws/dtn-satellite-sdn/api/v1"
 )
 
-func RouteSyncLoop(nameMap map[int]string, routeTable [][]int) error {
+func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool) error {
 	// Get RESTClient
 	restClient, err := util.GetRouteClient()
 	if err != nil {
-		return fmt.Errorf("CONFIG ERROR: %v", err)
+		return fmt.Errorf("config error: %v", err)
 	}
 
 	// Get current namespace
 	namespace, err := util.GetNamespace()
 	if err != nil {
-		return fmt.Errorf("GET NAMESPACE ERROR: %v", err)
+		return fmt.Errorf("get namespace error: %v", err)
 	}
 
 	// Get pods' ip
@@ -32,14 +32,15 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int) error {
 		var podIP string
 		var err error
 		for podIP, err = util.GetPodIP(nameMap[idx]); err != nil; podIP, err = util.GetPodIP(nameMap[idx]) {
-			log.Println("Retry")
+			log.Println("retry")
 			duration := 3000 + rand.Int31()%2000
 			time.Sleep(time.Duration(duration) * time.Millisecond)
 		}
 		podIPTable = append(podIPTable, podIP)
 	}
 
-	// Construct routes and apply
+	// Construct routes
+	routeList := sdnv1.RouteList{}
 	for idx1 := range routeTable {
 		route := sdnv1.Route{
 			Spec: sdnv1.RouteSpec{
@@ -63,13 +64,45 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int) error {
 				)
 			}
 		}
-		if err := restClient.Post().
+		routeList.Items = append(routeList.Items, route)
+	}
+
+	// Create/update routeList with RESTClient according to variable isFirstTime
+	if isFirstTime {
+		for _, route := range routeList.Items {
+			if err := restClient.Post().
+				Namespace(namespace).
+				Resource("routes").
+				Body(&route).
+				Do(context.TODO()).
+				Into(nil); err != nil {
+				return fmt.Errorf("apply route failure: %v", err)
+			}
+		}
+	} else {
+		routeVersionList := sdnv1.RouteList{}
+		resourceVersionMap := map[string]string{}
+		if err := restClient.Get().
 			Namespace(namespace).
 			Resource("routes").
-			Body(&route).
 			Do(context.TODO()).
-			Into(nil); err != nil {
-			return fmt.Errorf("APPLY ROUTE FAILURE: %v", err)
+			Into(&routeVersionList); err != nil {
+			return fmt.Errorf("get routelist error: %v", err)
+		}
+		for _, route := range routeVersionList.Items {
+			resourceVersionMap[route.Name] = route.ResourceVersion
+		}
+		for _, route := range routeList.Items {
+			route.ResourceVersion = resourceVersionMap[route.Name]
+			if err := restClient.Put().
+				Namespace(namespace).
+				Resource("routes").
+				Name(route.Name).
+				Body(&route).
+				Do(context.TODO()).
+				Into(nil); err != nil {
+				return fmt.Errorf("update route failure: %v", err)
+			}
 		}
 	}
 

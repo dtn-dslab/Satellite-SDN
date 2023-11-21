@@ -1,6 +1,7 @@
 package sdn
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -12,16 +13,28 @@ type HttpHandler func(http.ResponseWriter, *http.Request)
 func RunSDNServer(url string, expectedNodeNum int, timeout int) error {
 	// Create new clientset， set syncloop
 	client := clientset.NewSDNClient(url)
-	client.ApplyTopo()
-	client.ApplyPod(expectedNodeNum)
-	client.ApplyRoute()
+	if err := client.ApplyTopo(); err != nil {
+		return fmt.Errorf("apply topology error: %v", err)
+	}
+	if err := client.ApplyPod(expectedNodeNum); err != nil {
+		return fmt.Errorf("apply pod error: %v", err)
+	}
+	if err := client.ApplyRoute(); err != nil {
+		return fmt.Errorf("apply route error: %v", err)
+	}
 	if timeout != -1 {
 		go func() {
 			for {
 				time.Sleep(time.Duration(timeout) * time.Second)
-				client.FetchAndUpdate()
-				client.ApplyTopo()
-				client.ApplyRoute()
+				if err := client.FetchAndUpdate(); err != nil {
+					fmt.Printf("fetch and update topology error: %v\n", err)
+				}
+				if err := client.UpdateTopo(); err != nil {
+					fmt.Printf("apply topology error: %v\n", err)
+				}
+				if err := client.UpdateRoute(); err != nil {
+					fmt.Printf("apply route error: %v\n", err)
+				}
 			}
 		}()
 	}

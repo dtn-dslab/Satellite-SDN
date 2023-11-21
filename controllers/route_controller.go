@@ -252,28 +252,3 @@ func (r *RouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-// Get a pod's ip via `kubectl get pods -o wide` instruction by parsing the output.
-// func GetPodIP(podName string) (string, error) {
-// 	cmd := exec.Command("kubectl", "get", "pods", "-o", "wide")
-
-// 	output, err := cmd.CombinedOutput()
-// 	if err != nil {
-// 		return "", fmt.Errorf("Executing kubectl get pods failed: %v\n", err)
-// 	}
-
-// 	lines := strings.Split(string(output), "\n")[1:]
-// 	for _, line := range lines {
-// 		blocks := strings.Split(line, " ")
-// 		newBlocks := []string{}
-// 		for _, block := range blocks {
-// 			if block != "" {
-// 				newBlocks = append(newBlocks, block)
-// 			}
-// 		}
-// 		if newBlocks[0] == podName && newBlocks[5] != "<none>" {
-// 			return newBlocks[5], nil
-// 		}
-// 	}
-
-// 	return "", fmt.Errorf("Can't find pod: %s\n", podName)
-// }

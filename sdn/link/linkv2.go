@@ -116,7 +116,8 @@ func GetTopoAmongLowOrbitGroup(
 // Description: Apply topologies according to indexUUIDMap and topoAscArray
 // 1. indexUUIDMap: node's index -> node's uuid
 // 2. topoAscArray: Topology graph in ascend array
-func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int) error {
+// 3. isFistTime: true->create, false->update.
+func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int, isFirstTime bool) error {
 	// Initialize topologyList
 	topoList := topov1.TopologyList{}
 	for idx := 0; idx < len(indexUUIDMap); idx++ {
@@ -166,28 +167,51 @@ func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int) error {
 	// Get current namespace
 	namespace, err := util.GetNamespace()
 	if err != nil {
-		return fmt.Errorf("GET NAMESPACE ERROR: %v", err)
+		return fmt.Errorf("get namespace error: %v", err)
 	}
 
-	// Create topologyList with RESTClient
+	// Create/update topologyList with RESTClient according to variable isFirstTime
 	restClient, err := util.GetTopoClient()
 	if err != nil {
-		return fmt.Errorf("CONFIG ERROR: %v", err)
+		return fmt.Errorf("config error: %v", err)
 	}
-	for _, topo := range topoList.Items {
-		// fmt.Printf("%s -> ", topo.Name)
-		// for _, link := range topo.Spec.Links {
-		// 	fmt.Print(link.PeerPod)
-		// }
-		// fmt.Print("\n")
-		if err := restClient.Post().
+	if isFirstTime {
+		for _, topo := range topoList.Items {
+			if err := restClient.Post().
+				Namespace(namespace).
+				Resource("topologies").
+				Body(&topo).
+				Do(context.TODO()).
+				Into(nil); err != nil {
+				return fmt.Errorf("apply topology error: %v", err)
+			}
+		}
+	} else {
+		resourceVersionMap := map[string]string{}
+		topoVersionList := topov1.TopologyList{}
+		if err := restClient.Get().
 			Namespace(namespace).
 			Resource("topologies").
-			Body(&topo).
 			Do(context.TODO()).
-			Into(nil); err != nil {
-			return fmt.Errorf("APPLY TOPOLOGY FAILURE: %v", err)
+			Into(&topoVersionList); err != nil {
+			return fmt.Errorf("get topologylist error: %v", err)
+		}
+		for _, topo := range topoVersionList.Items {
+			resourceVersionMap[topo.Name] = topo.ResourceVersion
+		}
+		for _, topo := range topoList.Items {
+			topo.ResourceVersion = resourceVersionMap[topo.Name]
+			if err := restClient.Put().
+				Namespace(namespace).
+				Resource("topologies").
+				Name(topo.Name).
+				Body(&topo).
+				Do(context.TODO()).
+				Into(nil); err != nil {
+				return fmt.Errorf("update topology error: %v", err)
+			}
 		}
 	}
+	
 	return nil
 }

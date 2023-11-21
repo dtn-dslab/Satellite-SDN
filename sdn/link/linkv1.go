@@ -20,7 +20,7 @@ type LinkEdge struct {
 	To   int
 }
 
-func LinkSyncLoop(nameMap map[int]string, edgeSet []LinkEdge) error {
+func LinkSyncLoop(nameMap map[int]string, edgeSet []LinkEdge, isFirstTime bool) error {
 	// Initialize topologyList
 	topoList := topov1.TopologyList{}
 	// podIntfMap := make([]int, len(nameMap))
@@ -80,14 +80,41 @@ func LinkSyncLoop(nameMap map[int]string, edgeSet []LinkEdge) error {
 	if err != nil {
 		return fmt.Errorf("CONFIG ERROR: %v", err)
 	}
-	for _, topo := range topoList.Items {
-		if err := restClient.Post().
+	if isFirstTime {
+		for _, topo := range topoList.Items {
+			if err := restClient.Post().
+				Namespace(namespace).
+				Resource("topologies").
+				Body(&topo).
+				Do(context.TODO()).
+				Into(nil); err != nil {
+				return fmt.Errorf("apply topology error: %v", err)
+			}
+		}
+	} else {
+		resourceVersionMap := map[string]string{}
+		topoVersionList := topov1.TopologyList{}
+		if err := restClient.Get().
 			Namespace(namespace).
 			Resource("topologies").
-			Body(&topo).
 			Do(context.TODO()).
-			Into(nil); err != nil {
-			return fmt.Errorf("APPLY TOPOLOGY FAILURE: %v", err)
+			Into(&topoVersionList); err != nil {
+			return fmt.Errorf("get topologylist error: %v", err)
+		}
+		for _, topo := range topoVersionList.Items {
+			resourceVersionMap[topo.Name] = topo.ResourceVersion
+		}
+		for _, topo := range topoList.Items {
+			topo.ResourceVersion = resourceVersionMap[topo.Name]
+			if err := restClient.Put().
+				Namespace(namespace).
+				Resource("topologies").
+				Name(topo.Name).
+				Body(&topo).
+				Do(context.TODO()).
+				Into(nil); err != nil {
+				return fmt.Errorf("update topology error: %v", err)
+			}
 		}
 	}
 	return nil

@@ -9,6 +9,5 @@ elif [ $# -gt 1 ]; then
     exit
 fi
 
-# Get topology crd and network links
+# Get network links
 kubectl exec -it $1 ip route
-kubectl describe topology $1

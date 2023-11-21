@@ -78,7 +78,7 @@ func GenerateSatelliteConfig(inputFilePath string) (map[int]string, []link.LinkE
 func CreateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]int, expectedNodeNum int) error {
 	// Invoke link(topology)'s sync loop
 	log.Println("Topology Sync...")
-	err := link.LinkSyncLoop(nameMap, edgeSet)
+	err := link.LinkSyncLoop(nameMap, edgeSet, true)
 	if err != nil {
 		return fmt.Errorf("Topology sync failed: %v\n", err)
 	}
@@ -95,7 +95,7 @@ func CreateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]i
 
 	// Invoke route's sync loop
 	log.Println("Route Sync...")
-	err = route.RouteSyncLoop(nameMap, routeTable)
+	err = route.RouteSyncLoop(nameMap, routeTable, true)
 	if err != nil {
 		return fmt.Errorf("Route sync failed: %v\n", err)
 	}
@@ -109,14 +109,14 @@ func CreateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]i
 func UpdateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]int) error {
 	// Invoke link(topology)'s sync loop
 	log.Println("Topology Sync...")
-	err := link.LinkSyncLoop(nameMap, edgeSet)
+	err := link.LinkSyncLoop(nameMap, edgeSet, false)
 	if err != nil {
 		return fmt.Errorf("Topology sync failed: %v\n", err)
 	}
 
 	// Invoke route's sync loop
 	log.Println("Route Sync...")
-	err = route.RouteSyncLoop(nameMap, routeTable)
+	err = route.RouteSyncLoop(nameMap, routeTable, false)
 	if err != nil {
 		return fmt.Errorf("Route sync failed: %v\n", err)
 	}

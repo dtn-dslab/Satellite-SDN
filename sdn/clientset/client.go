@@ -28,6 +28,8 @@ type ClientInterface interface {
 	ApplyPod(nodeNum int) error
 	ApplyTopo() error
 	ApplyRoute() error
+	UpdateTopo() error
+	UpdateRoute() error
 }
 
 type SDNClient struct {
@@ -260,14 +262,28 @@ func (client *SDNClient) ApplyPod(nodeNum int) error {
 // Description: Apply topologies according to infos in SDNClient
 func (client *SDNClient) ApplyTopo() error {
 	log.Println("Applying topology...")
-	return link.LinkSyncLoopV2(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray())
+	return link.LinkSyncLoopV2(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray(), true)
+}
+
+// Function: UpdateTopo
+// Description: Update topologies according to infos in SDNClient
+func (client *SDNClient) UpdateTopo() error {
+	log.Println("Updating topology...")
+	return link.LinkSyncLoopV2(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray(), false)
 }
 
 // Function: ApplyRoute
 // Description: Apply routes according to infos in SDNClient
 func (client *SDNClient) ApplyRoute() error {
 	log.Println("Applying route...")
-	return route.RouteSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.RouteGraph)
+	return route.RouteSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.RouteGraph, true)
+}
+
+// Function: UpdateRoute
+// Description: Update routes according to infos in SDNClient
+func (client *SDNClient) UpdateRoute() error {
+	log.Println("Updating route...")
+	return route.RouteSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.RouteGraph, false)
 }
 
 
