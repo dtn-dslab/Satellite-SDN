@@ -168,7 +168,6 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 	n.RouteGraph = route.ComputeRoutes(distanceMapForRoute, ThreadNums)
 
 	fmt.Println(n.Metadata.IndexUUIDMap)
-	fmt.Println(n.TopoGraph)
 	fmt.Println(n.RouteGraph)
 }
 

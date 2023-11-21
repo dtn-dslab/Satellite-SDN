@@ -28,6 +28,7 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 	// Get pods' ip
 	nodeCount := len(nameMap)
 	podIPTable := []string{}
+	log.Println("Getting ip...")
 	for idx := 0; idx < nodeCount; idx++ {
 		var podIP string
 		var err error
@@ -69,6 +70,7 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 
 	// Create/update routeList with RESTClient according to variable isFirstTime
 	if isFirstTime {
+		log.Println("Creating routes...")
 		for _, route := range routeList.Items {
 			if err := restClient.Post().
 				Namespace(namespace).
@@ -80,6 +82,7 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 			}
 		}
 	} else {
+		log.Println("Updating routes...")
 		routeVersionList := sdnv1.RouteList{}
 		resourceVersionMap := map[string]string{}
 		if err := restClient.Get().

@@ -35,21 +35,13 @@ func LinkSyncLoop(nameMap map[int]string, edgeSet []LinkEdge, isFirstTime bool) 
 
 	// Construct topologyList according to edgeSet
 	for _, edge := range edgeSet {
-		// Intf's name are limited to no more than 15 bytes
-		fromIntf, toIntf := nameMap[edge.From], nameMap[edge.To]
-		if len(fromIntf) > 15 {
-			fromIntf = fromIntf[:15]
-		}
-		if len(toIntf) > 15 {
-			toIntf = toIntf[:15]
-		}
 		topoList.Items[edge.From].Spec.Links = append(
 			topoList.Items[edge.From].Spec.Links,
 			topov1.Link{
 				UID:       (edge.From << 12) + edge.To,
 				PeerPod:   nameMap[edge.To],
-				LocalIntf: toIntf,
-				PeerIntf:  fromIntf,
+				LocalIntf: util.GetLinkName(nameMap[edge.To]),
+				PeerIntf:  util.GetLinkName(nameMap[edge.From]),
 				LocalIP:   util.GetVxlanIP(uint(edge.From), uint(edge.To)),
 				PeerIP:    util.GetVxlanIP(uint(edge.To), uint(edge.From)),
 			},
@@ -59,8 +51,8 @@ func LinkSyncLoop(nameMap map[int]string, edgeSet []LinkEdge, isFirstTime bool) 
 			topov1.Link{
 				UID:       (edge.From << 12) + edge.To,
 				PeerPod:   nameMap[edge.From],
-				LocalIntf: fromIntf,
-				PeerIntf:  toIntf,
+				LocalIntf: util.GetLinkName(nameMap[edge.From]),
+				PeerIntf:  util.GetLinkName(nameMap[edge.To]),
 				LocalIP:   util.GetVxlanIP(uint(edge.To), uint(edge.From)),
 				PeerIP:    util.GetVxlanIP(uint(edge.From), uint(edge.To)),
 			},

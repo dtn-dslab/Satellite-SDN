@@ -198,7 +198,7 @@ func (r *RouteReconciler) UpdateSubpaths(ctx context.Context, podIP string, subp
 	if err != nil {
 		log.Info("Post Error", "PostURL", postURL, "Error", err)
 	} else if resp != nil && resp.StatusCode != http.StatusOK {
-		log.Info("Add subpaths failed", "StatusCode", resp.StatusCode, "PostURL", postURL)
+		log.Info("Update subpaths failed", "StatusCode", resp.StatusCode, "PostURL", postURL)
 	}
 
 	return err

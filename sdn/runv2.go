@@ -2,6 +2,7 @@ package sdn
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -22,6 +23,7 @@ func RunSDNServer(url string, expectedNodeNum int, timeout int) error {
 	if err := client.ApplyRoute(); err != nil {
 		return fmt.Errorf("apply route error: %v", err)
 	}
+	log.Println("Done!")
 	if timeout != -1 {
 		go func() {
 			for {
@@ -35,6 +37,7 @@ func RunSDNServer(url string, expectedNodeNum int, timeout int) error {
 				if err := client.UpdateRoute(); err != nil {
 					fmt.Printf("apply route error: %v\n", err)
 				}
+				log.Println("Done!")
 			}
 		}()
 	}

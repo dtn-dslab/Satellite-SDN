@@ -3,6 +3,7 @@ package link
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 	satv2 "ws/dtn-satellite-sdn/sdn/type/v2"
 	"ws/dtn-satellite-sdn/sdn/util"
@@ -132,21 +133,13 @@ func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int, isFirstTi
 	// Construct topologyList according to topoAscArray
 	for _, linkPair := range topoAscArray {
 		edgeFrom, edgeTo := linkPair[0], linkPair[1]
-		// Intf's name are limited to no more than 15 bytes
-		fromIntf, toIntf := indexUUIDMap[edgeFrom], indexUUIDMap[edgeTo]
-		if len(fromIntf) > 15 {
-			fromIntf = fromIntf[:15]
-		}
-		if len(toIntf) > 15 {
-			toIntf = toIntf[:15]
-		}
 		topoList.Items[edgeFrom].Spec.Links = append(
 			topoList.Items[edgeFrom].Spec.Links,
 			topov1.Link{
 				UID:       (edgeFrom << 12) + edgeTo,
 				PeerPod:   indexUUIDMap[edgeTo],
-				LocalIntf: toIntf,
-				PeerIntf:  fromIntf,
+				LocalIntf: util.GetLinkName(indexUUIDMap[edgeTo]),
+				PeerIntf:  util.GetLinkName(indexUUIDMap[edgeFrom]),
 				LocalIP:   util.GetVxlanIP(uint(edgeFrom), uint(edgeTo)),
 				PeerIP:    util.GetVxlanIP(uint(edgeTo), uint(edgeFrom)),
 			},
@@ -156,8 +149,8 @@ func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int, isFirstTi
 			topov1.Link{
 				UID:       (edgeFrom << 12) + edgeTo,
 				PeerPod:   indexUUIDMap[edgeFrom],
-				LocalIntf: fromIntf,
-				PeerIntf:  toIntf,
+				LocalIntf: util.GetLinkName(indexUUIDMap[edgeFrom]),
+				PeerIntf:  util.GetLinkName(indexUUIDMap[edgeTo]),
 				LocalIP:   util.GetVxlanIP(uint(edgeTo), uint(edgeFrom)),
 				PeerIP:    util.GetVxlanIP(uint(edgeFrom), uint(edgeTo)),
 			},
@@ -176,7 +169,9 @@ func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int, isFirstTi
 		return fmt.Errorf("config error: %v", err)
 	}
 	if isFirstTime {
+		log.Println("creating topologies...")
 		for _, topo := range topoList.Items {
+			util.ShowTopology(&topo)
 			if err := restClient.Post().
 				Namespace(namespace).
 				Resource("topologies").
@@ -187,6 +182,7 @@ func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int, isFirstTi
 			}
 		}
 	} else {
+		log.Println("updating topologies...")
 		resourceVersionMap := map[string]string{}
 		topoVersionList := topov1.TopologyList{}
 		if err := restClient.Get().
@@ -200,6 +196,7 @@ func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int, isFirstTi
 			resourceVersionMap[topo.Name] = topo.ResourceVersion
 		}
 		for _, topo := range topoList.Items {
+			util.ShowTopology(&topo)
 			topo.ResourceVersion = resourceVersionMap[topo.Name]
 			if err := restClient.Put().
 				Namespace(namespace).
