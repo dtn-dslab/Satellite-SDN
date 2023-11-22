@@ -28,9 +28,11 @@ func PodSyncLoop(nameMap map[int]string) error {
 	// TODO(ws): Store pod name in database
 	for idx := 0; idx < len(nameMap); idx++ {
 		sat_name := "satellite"
-		image_name := "yy77yy/podserver:v6"
+		image_name := "yy77yy/podserver:v7"
 		image_pull_policy := "IfNotPresent"
-		var port, prometheus_port, flow_port int32 = 8080, 2112, 8081
+		flowpvc := "podserver-wangshao-pvc"
+		flow_mount_path := "/flow"
+		var port, prometheus_port, flow_port int32 = 8080, 2112, 5202
 		prometheus_port_name := "prometheus"
 		// TODO(ws): figure out why FieldManager is needed
 		// When we delete key 'FieldManager', error occurred:
@@ -66,6 +68,12 @@ func PodSyncLoop(nameMap map[int]string) error {
 								ContainerPort: &flow_port,
 							},
 						},
+						VolumeMounts: []v1.VolumeMountApplyConfiguration{
+							{
+								MountPath: &flow_mount_path,
+								Name:      &flowpvc,
+							},
+						},
 						Command: []string{
 							"/bin/sh",
 							"-c",
@@ -80,6 +88,16 @@ func PodSyncLoop(nameMap map[int]string) error {
 								Add: []corev1.Capability{
 									"NET_ADMIN",
 								},
+							},
+						},
+					},
+				},
+				Volumes: []v1.VolumeApplyConfiguration{
+					{
+						Name: &flowpvc,
+						VolumeSourceApplyConfiguration: v1.VolumeSourceApplyConfiguration{
+							PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSourceApplyConfiguration{
+								ClaimName: &flowpvc,
 							},
 						},
 					},
