@@ -55,3 +55,33 @@ func RunSDNServer(url string, expectedNodeNum int, timeout int) error {
 	// Start Server
 	return http.ListenAndServe(":30101", nil)
 }
+
+func RunSDNServerTest(url string, expectedNodeNum int, timeout int) error {
+	// Create new clientset， set syncloop
+	client := clientset.NewSDNClient(url)
+	log.Println("Done!")
+	if timeout != -1 {
+		go func() {
+			for {
+				time.Sleep(time.Duration(timeout) * time.Second)
+				if err := client.FetchAndUpdate(); err != nil {
+					fmt.Printf("fetch and update topology error: %v\n", err)
+				}
+				log.Println("Done!")
+			}
+		}()
+	}
+
+	// Bind http request with handler
+	sdnHandlerMap := map[string]HttpHandler {
+		"/getTopologyGraph": client.GetTopoInAscArrayHandler,
+		"/getRoute": client.GetRouteFromAndToHandler,
+		"/getConnection": client.GetRouteHopsHandler,
+	}
+	for url, handler := range sdnHandlerMap {
+		http.HandleFunc(url, handler)
+	}
+
+	// Start Server
+	return http.ListenAndServe(":30102", nil)
+}

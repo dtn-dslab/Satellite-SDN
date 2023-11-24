@@ -166,7 +166,7 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 	n.RouteGraph = route.ComputeRoutes(distanceMapForRoute, ThreadNums)
 
 	fmt.Println(n.Metadata.IndexUUIDMap)
-	fmt.Println(n.RouteGraph)
+	// fmt.Println(n.RouteGraph)
 }
 
 func (n *Network) CheckConnection(idx1, idx2 int) bool {
