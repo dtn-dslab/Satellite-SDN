@@ -6,11 +6,11 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 	"ws/dtn-satellite-sdn/sdn/link"
 	"ws/dtn-satellite-sdn/sdn/pod"
 	"ws/dtn-satellite-sdn/sdn/route"
 	"ws/dtn-satellite-sdn/sdn/util"
-
 )
 
 type ClientInterface interface {
@@ -41,6 +41,9 @@ type SDNClient struct {
 
 	// PositionURL is the address of position computing module, by which SDNClient can get each node's position
 	PositionURL string
+
+	// RWLock is RWMutex for synchronizing writing threads and reading threads
+	RWLock *sync.RWMutex
 }
 
 // Function: NewSDNClient
@@ -56,12 +59,15 @@ func NewSDNClient(url string) *SDNClient {
 		OrbitClient: orbit,
 		NetworkClient: NewNetwork(orbit),
 		PositionURL: url,
+		RWLock: new(sync.RWMutex),
 	}
 }
 
 // Function: FetchAndUpdate
 // Description: Update OrbitClient and NetworkClient.
 func (client *SDNClient) FetchAndUpdate() error {
+	client.RWLock.Lock()
+	defer client.RWLock.Unlock()
 	if params, err := util.Fetch(client.PositionURL); err != nil {
 		return fmt.Errorf("failed to update SDN: %v", err)
 	} else {
@@ -76,6 +82,8 @@ func (client *SDNClient) FetchAndUpdate() error {
 // 1. uuid1: The first node's uuid.
 // 2. uuid2: The second node's uuid.
 func (client *SDNClient) CheckConnection(uuid1, uuid2 string) (bool, error) {
+	client.RWLock.RLock()
+	defer client.RWLock.RLock()
 	uuidIndexMap := client.OrbitClient.GetUUIDIndexMap()
 	if uuid1_index, ok := uuidIndexMap[uuid1]; !ok {
 		return false, fmt.Errorf("uuid %s does not exist", uuid1)
@@ -107,6 +115,8 @@ func (client *SDNClient) CheckConnectionHandler(w http.ResponseWriter, r *http.R
 // Function: GetTopoInAscArray
 // Description: Return topology graph in the form of array
 func (client *SDNClient) GetTopoInAscArray() ([][]string, error) {
+	client.RWLock.RLock()
+	defer client.RWLock.RLock()
 	indexUUIDMap := client.OrbitClient.GetIndexUUIDMap()
 	ascArray := client.NetworkClient.GetTopoInAscArray()
 	result := [][]string{}
@@ -133,6 +143,8 @@ func (client *SDNClient) GetTopoInAscArrayHandler(w http.ResponseWriter, r *http
 // 1. uuid1: The src node's uuid.
 // 2. uuid2: The dst node's uuid.
 func (client *SDNClient) GetRouteFromAndTo(uuid1, uuid2 string) ([]string, error) {
+	client.RWLock.RLock()
+	defer client.RWLock.RLock()
 	uuidIndexMap := client.OrbitClient.GetUUIDIndexMap()
 	indexUUIDMap := client.OrbitClient.GetIndexUUIDMap()
 	if uuid1_index, ok := uuidIndexMap[uuid1]; !ok {
@@ -172,6 +184,8 @@ func (client *SDNClient) GetRouteFromAndToHandler(w http.ResponseWriter, r *http
 // 1. uuid: The src node's uuid.
 // 2. uuidList: The dst nodes' uuid list.
 func (client *SDNClient) GetRouteHops(uuid, uuidList string) (string, error) {
+	client.RWLock.RLock()
+	defer client.RWLock.RLock()
 	var result string = ""
 	uuidIndexMap := client.OrbitClient.GetUUIDIndexMap()
 	uuid_index, ok := 0, false
@@ -214,6 +228,8 @@ func (client *SDNClient) GetRouteHopsHandler(w http.ResponseWriter, r *http.Requ
 // 1. uuid1: The src node's uuid.
 // 2. uuid2: The dst node's uuid.
 func (client *SDNClient) GetDistance(uuid1, uuid2 string) (float64, error) {
+	client.RWLock.RLock()
+	defer client.RWLock.RLock()
 	uuidIndexMap := client.OrbitClient.GetUUIDIndexMap()
 	if uuid1_index, ok := uuidIndexMap[uuid1]; !ok {
 		return 0.0, fmt.Errorf("uuid %s does not exist", uuid1)
@@ -249,6 +265,8 @@ func (client *SDNClient) ApplyPod(nodeNum int) error {
 	kubeNodeList, _ := util.GetSlaveNodes(nodeNum)
 	log.Println("Applying pod...")
 	// Currently, we only need to allocate low-orbit satellites in one group to the same physical node.
+	client.RWLock.RLock()
+	defer client.RWLock.RLock()
 	for _, group := range client.OrbitClient.LowOrbitSats {
 		for _, node := range group.Nodes {
 			uuidAllocNodeMap[node.UUID] = kubeNodeList[allocIdx]
@@ -261,6 +279,8 @@ func (client *SDNClient) ApplyPod(nodeNum int) error {
 // Function: ApplyTopo
 // Description: Apply topologies according to infos in SDNClient
 func (client *SDNClient) ApplyTopo() error {
+	client.RWLock.RLock()
+	defer client.RWLock.RLock()
 	log.Println("Applying topology...")
 	return link.LinkSyncLoopV2(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray(), true)
 }
@@ -268,6 +288,8 @@ func (client *SDNClient) ApplyTopo() error {
 // Function: UpdateTopo
 // Description: Update topologies according to infos in SDNClient
 func (client *SDNClient) UpdateTopo() error {
+	client.RWLock.RLock()
+	defer client.RWLock.RLock()
 	log.Println("Updating topology...")
 	return link.LinkSyncLoopV2(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray(), false)
 }
@@ -275,6 +297,8 @@ func (client *SDNClient) UpdateTopo() error {
 // Function: ApplyRoute
 // Description: Apply routes according to infos in SDNClient
 func (client *SDNClient) ApplyRoute() error {
+	client.RWLock.RLock()
+	defer client.RWLock.RLock()
 	log.Println("Applying route...")
 	return route.RouteSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.RouteGraph, true)
 }
@@ -282,6 +306,8 @@ func (client *SDNClient) ApplyRoute() error {
 // Function: UpdateRoute
 // Description: Update routes according to infos in SDNClient
 func (client *SDNClient) UpdateRoute() error {
+	client.RWLock.RLock()
+	defer client.RWLock.RLock()
 	log.Println("Updating route...")
 	return route.RouteSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.RouteGraph, false)
 }
