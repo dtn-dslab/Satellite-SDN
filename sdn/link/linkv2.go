@@ -171,7 +171,9 @@ func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int, isFirstTi
 	if isFirstTime {
 		log.Println("creating topologies...")
 		for _, topo := range topoList.Items {
-			util.ShowTopology(&topo)
+			if util.DEBUG {
+				util.ShowTopology(&topo)
+			}
 			if err := restClient.Post().
 				Namespace(namespace).
 				Resource("topologies").
@@ -196,7 +198,9 @@ func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int, isFirstTi
 			resourceVersionMap[topo.Name] = topo.ResourceVersion
 		}
 		for _, topo := range topoList.Items {
-			util.ShowTopology(&topo)
+			if util.DEBUG {
+				util.ShowTopology(&topo)
+			}
 			topo.ResourceVersion = resourceVersionMap[topo.Name]
 			if err := restClient.Put().
 				Namespace(namespace).

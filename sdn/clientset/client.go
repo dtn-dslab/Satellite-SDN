@@ -83,7 +83,7 @@ func (client *SDNClient) FetchAndUpdate() error {
 // 2. uuid2: The second node's uuid.
 func (client *SDNClient) CheckConnection(uuid1, uuid2 string) (bool, error) {
 	client.RWLock.RLock()
-	defer client.RWLock.RLock()
+	defer client.RWLock.RUnlock()
 	uuidIndexMap := client.OrbitClient.GetUUIDIndexMap()
 	if uuid1_index, ok := uuidIndexMap[uuid1]; !ok {
 		return false, fmt.Errorf("uuid %s does not exist", uuid1)
@@ -116,7 +116,7 @@ func (client *SDNClient) CheckConnectionHandler(w http.ResponseWriter, r *http.R
 // Description: Return topology graph in the form of array
 func (client *SDNClient) GetTopoInAscArray() ([][]string, error) {
 	client.RWLock.RLock()
-	defer client.RWLock.RLock()
+	defer client.RWLock.RUnlock()
 	indexUUIDMap := client.OrbitClient.GetIndexUUIDMap()
 	ascArray := client.NetworkClient.GetTopoInAscArray()
 	result := [][]string{}
@@ -144,7 +144,7 @@ func (client *SDNClient) GetTopoInAscArrayHandler(w http.ResponseWriter, r *http
 // 2. uuid2: The dst node's uuid.
 func (client *SDNClient) GetRouteFromAndTo(uuid1, uuid2 string) ([]string, error) {
 	client.RWLock.RLock()
-	defer client.RWLock.RLock()
+	defer client.RWLock.RUnlock()
 	uuidIndexMap := client.OrbitClient.GetUUIDIndexMap()
 	indexUUIDMap := client.OrbitClient.GetIndexUUIDMap()
 	if uuid1_index, ok := uuidIndexMap[uuid1]; !ok {
@@ -185,7 +185,7 @@ func (client *SDNClient) GetRouteFromAndToHandler(w http.ResponseWriter, r *http
 // 2. uuidList: The dst nodes' uuid list.
 func (client *SDNClient) GetRouteHops(uuid, uuidList string) (string, error) {
 	client.RWLock.RLock()
-	defer client.RWLock.RLock()
+	defer client.RWLock.RUnlock()
 	var result string = ""
 	uuidIndexMap := client.OrbitClient.GetUUIDIndexMap()
 	uuid_index, ok := 0, false
@@ -229,7 +229,7 @@ func (client *SDNClient) GetRouteHopsHandler(w http.ResponseWriter, r *http.Requ
 // 2. uuid2: The dst node's uuid.
 func (client *SDNClient) GetDistance(uuid1, uuid2 string) (float64, error) {
 	client.RWLock.RLock()
-	defer client.RWLock.RLock()
+	defer client.RWLock.RUnlock()
 	uuidIndexMap := client.OrbitClient.GetUUIDIndexMap()
 	if uuid1_index, ok := uuidIndexMap[uuid1]; !ok {
 		return 0.0, fmt.Errorf("uuid %s does not exist", uuid1)
@@ -266,7 +266,7 @@ func (client *SDNClient) ApplyPod(nodeNum int) error {
 	log.Println("Applying pod...")
 	// Currently, we only need to allocate low-orbit satellites in one group to the same physical node.
 	client.RWLock.RLock()
-	defer client.RWLock.RLock()
+	defer client.RWLock.RUnlock()
 	for _, group := range client.OrbitClient.LowOrbitSats {
 		for _, node := range group.Nodes {
 			uuidAllocNodeMap[node.UUID] = kubeNodeList[allocIdx]
@@ -280,7 +280,7 @@ func (client *SDNClient) ApplyPod(nodeNum int) error {
 // Description: Apply topologies according to infos in SDNClient
 func (client *SDNClient) ApplyTopo() error {
 	client.RWLock.RLock()
-	defer client.RWLock.RLock()
+	defer client.RWLock.RUnlock()
 	log.Println("Applying topology...")
 	return link.LinkSyncLoopV2(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray(), true)
 }
@@ -289,7 +289,7 @@ func (client *SDNClient) ApplyTopo() error {
 // Description: Update topologies according to infos in SDNClient
 func (client *SDNClient) UpdateTopo() error {
 	client.RWLock.RLock()
-	defer client.RWLock.RLock()
+	defer client.RWLock.RUnlock()
 	log.Println("Updating topology...")
 	return link.LinkSyncLoopV2(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray(), false)
 }
@@ -298,7 +298,7 @@ func (client *SDNClient) UpdateTopo() error {
 // Description: Apply routes according to infos in SDNClient
 func (client *SDNClient) ApplyRoute() error {
 	client.RWLock.RLock()
-	defer client.RWLock.RLock()
+	defer client.RWLock.RUnlock()
 	log.Println("Applying route...")
 	return route.RouteSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.RouteGraph, true)
 }
@@ -307,7 +307,7 @@ func (client *SDNClient) ApplyRoute() error {
 // Description: Update routes according to infos in SDNClient
 func (client *SDNClient) UpdateRoute() error {
 	client.RWLock.RLock()
-	defer client.RWLock.RLock()
+	defer client.RWLock.RUnlock()
 	log.Println("Updating route...")
 	return route.RouteSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.RouteGraph, false)
 }

@@ -6,6 +6,7 @@ import (
 
 	"ws/dtn-satellite-sdn/sdn/link"
 	"ws/dtn-satellite-sdn/sdn/route"
+	"ws/dtn-satellite-sdn/sdn/util"
 	satv2 "ws/dtn-satellite-sdn/sdn/type/v2"
 )
 
@@ -165,8 +166,10 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 	// Call route calculation func in package route
 	n.RouteGraph = route.ComputeRoutes(distanceMapForRoute, ThreadNums)
 
-	fmt.Println(n.Metadata.IndexUUIDMap)
-	// fmt.Println(n.RouteGraph)
+	if util.DEBUG {
+		fmt.Println(n.Metadata.IndexUUIDMap)
+		fmt.Println(n.RouteGraph)
+	}
 }
 
 func (n *Network) CheckConnection(idx1, idx2 int) bool {
