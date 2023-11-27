@@ -31,14 +31,20 @@ func PodSyncLoopV2(indexUUIDMap map[int]string, uuidAllocNodeMap map[string]stri
 	podList := []*v1.PodApplyConfiguration{}
 	for index, uuid := range indexUUIDMap {
 		sat_name := uuid
-		image_name := "electronicwaste/podserver:v10"
+		image_name := "electronicwaste/podserver:v11"
 		image_pull_policy := "IfNotPresent"
-		var port, prometheus_port int32 = 8080, 2112
+		flowpvc := "podserver-wangshao-pvc"
+		flow_mount_path := "/flow"
 		prometheus_port_name := "prometheus"
+		var port, prometheus_port, flow_port int32 = 8080, 2112, 5202
+		labels := map[string]string{
+			"k8s-app": "iperf",
+		}
 		podConfig := &v1.PodApplyConfiguration{}
 		podConfig = podConfig.WithAPIVersion("v1")
 		podConfig = podConfig.WithKind("Pod")
 		podConfig = podConfig.WithName(sat_name)
+		podConfig = podConfig.WithLabels(labels)
 		podConfig = podConfig.WithSpec(
 			&v1.PodSpecApplyConfiguration{
 				Containers: []v1.ContainerApplyConfiguration {
@@ -54,6 +60,15 @@ func PodSyncLoopV2(indexUUIDMap map[int]string, uuidAllocNodeMap map[string]stri
 								Name: &prometheus_port_name,
 								ContainerPort: &prometheus_port,
 							},
+							{
+								ContainerPort: &flow_port,
+							},
+						},
+						VolumeMounts: []v1.VolumeMountApplyConfiguration{
+							{
+								MountPath: &flow_mount_path,
+								Name:      &flowpvc,
+							},
 						},
 						Command: []string {
 							"/bin/sh",
@@ -61,11 +76,9 @@ func PodSyncLoopV2(indexUUIDMap map[int]string, uuidAllocNodeMap map[string]stri
 						},
 						Args: []string {
 							fmt.Sprintf(
-								"export POD_IDX=%d;" +
-								"export GLOBAL_IP=%s;" +
-								"/bootstrap.sh", 
-								index + 5000,
-								util.GetGlobalIP(uint(index)),
+								"export PODNAME=%s;" +
+								"./start.sh %s %d", 
+								uuid, util.GetGlobalIP(uint(index)), index+5000,
 							),
 						},
 						SecurityContext: &v1.SecurityContextApplyConfiguration{
@@ -77,12 +90,20 @@ func PodSyncLoopV2(indexUUIDMap map[int]string, uuidAllocNodeMap map[string]stri
 						},
 					},
 				},
+				Volumes: []v1.VolumeApplyConfiguration{
+					{
+						Name: &flowpvc,
+						VolumeSourceApplyConfiguration: v1.VolumeSourceApplyConfiguration{
+							PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSourceApplyConfiguration{
+								ClaimName: &flowpvc,
+							},
+						},
+					},
+				},
 			},
 		)
 		if allocNode, ok := uuidAllocNodeMap[uuid]; ok {
-			podConfig.Spec.NodeSelector = map[string]string {
-				"kubernetes.io/hostname": allocNode,
-			}
+			podConfig.Spec.NodeName = &allocNode
 		}
 		podList = append(podList, podConfig)
 	}
