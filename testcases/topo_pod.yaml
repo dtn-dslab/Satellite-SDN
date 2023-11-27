@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: PodList
+items:
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    name: sdn1
+  spec:
+    nodeName: node1.dtn.lab
+    containers:
+    - name: sdn1
+      image: alpine:3.18.0
+      imagePullPolicy: IfNotPresent
+      ports:
+      - containerPort: 5201
+      command: ["/bin/sh", "-c", "apk add iperf3;sleep 20000000000"]
+
+              
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    name: sdn2
+  spec:
+    nodeName: node1.dtn.lab
+    containers:
+    - name: sdn2
+      image: alpine:3.18.0
+      imagePullPolicy: IfNotPresent
+      ports:
+      - containerPort: 5201
+      command: ["/bin/sh", "-c", "apk add iperf3;sleep 20000000000"]
+
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    name: sdn3
+  spec:
+    nodeName: node2.dtn.lab
+    containers:
+    - name: sdn3
+      image: alpine:3.18.0
+      imagePullPolicy: IfNotPresent
+      ports:
+      - containerPort: 5201
+      command: ["/bin/sh", "-c", "apk add iperf3;sleep 20000000000"]

@@ -1,8 +1,11 @@
 package util
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
+	"net/http"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -22,23 +25,31 @@ import (
 
 var (
 	kubeconfig *string = nil
+	clientset *kubernetes.Clientset = nil
 	routeclient *rest.RESTClient = nil
 	topoclient *rest.RESTClient = nil
 )
 
 func init() {
-	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-	flag.Parse()
-
 	sdnv1.AddToScheme(scheme.Scheme)
 	topov1.AddToScheme(scheme.Scheme)
 }
 
 func GetClientset() (*kubernetes.Clientset, error) {
+	// If clientset is not empty, return clientset
+	if clientset != nil {
+		return clientset, nil
+	}
+
+	// init kubeconfig
+	if kubeconfig == nil {
+		if home := homedir.HomeDir(); home != "" {
+			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		} else {
+			kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		}
+	}
+
 	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
@@ -46,7 +57,8 @@ func GetClientset() (*kubernetes.Clientset, error) {
 	}
 
 	// create the clientset
-	return kubernetes.NewForConfig(config)
+	clientset, err = kubernetes.NewForConfig(config)
+	return clientset, err
 }
 
 func GetRouteClient() (*rest.RESTClient, error) {
@@ -54,6 +66,16 @@ func GetRouteClient() (*rest.RESTClient, error) {
 	if routeclient != nil {
 		return routeclient, nil
 	}
+
+	// init kubeconfig
+	if kubeconfig == nil {
+		if home := homedir.HomeDir(); home != "" {
+			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		} else {
+			kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		}
+	}
+
 	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
@@ -74,6 +96,16 @@ func GetTopoClient() (*rest.RESTClient, error) {
 	if topoclient != nil {
 		return topoclient, nil
 	}
+
+	// init kubeconfig
+	if kubeconfig == nil {
+		if home := homedir.HomeDir(); home != "" {
+			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		} else {
+			kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		}
+	}
+	
 	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
@@ -105,4 +137,38 @@ func GetNamespace() (string, error) {
 
 	namespace := strings.Trim(string(output), "\"")
 	return namespace, nil
+}
+
+func GetSlaveNodes(nodeNum int) ([]string, error) {
+	// Execute `kubectl get nodes | grep none` to get slave nodes
+	cmd := exec.Command("/bin/sh", "-c", "kubectl get nodes | grep none")
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return nil, fmt.Errorf("get nodes failed: %v", err)
+	} else {
+		result := []string{}
+		lines := strings.Split(string(output), "\n")
+		for idx := 0; idx < len(lines) && idx < nodeNum; idx++ {
+			line := lines[idx]
+			name, _, _ := strings.Cut(line, " ")
+			result = append(result, name)
+		}
+		return result, nil
+	}
+}
+
+func Fetch(url string) (map[string]interface{}, error) {
+	resp, err := http.Get(url)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("fetch %s error! StatusCode: %d, Details: %v", url, resp.StatusCode, err)
+	}
+	content, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response body error: %v", err)
+	}
+	var result map[string]interface{}
+	if err := json.Unmarshal(content, &result); err != nil {
+		return nil, fmt.Errorf("unmarshal failed: %v", err)
+	} else {
+		return result, nil
+	}
 }

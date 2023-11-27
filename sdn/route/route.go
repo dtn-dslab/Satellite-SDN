@@ -7,39 +7,41 @@ import (
 	"math/rand"
 	"sync"
 	"time"
-	"ws/dtn-satellite-sdn/sdn/util"
 
+	"ws/dtn-satellite-sdn/sdn/util"
 	sdnv1 "ws/dtn-satellite-sdn/api/v1"
 )
 
-func RouteSyncLoop(nameMap map[int]string, routeTable [][]int) error {
+func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool) error {
 	// Get RESTClient
 	restClient, err := util.GetRouteClient()
 	if err != nil {
-		return fmt.Errorf("CONFIG ERROR: %v", err)
+		return fmt.Errorf("config error: %v", err)
 	}
 
 	// Get current namespace
 	namespace, err := util.GetNamespace()
 	if err != nil {
-		return fmt.Errorf("GET NAMESPACE ERROR: %v", err)
+		return fmt.Errorf("get namespace error: %v", err)
 	}
 
 	// Get pods' ip
 	nodeCount := len(nameMap)
 	podIPTable := []string{}
+	log.Println("Getting ip...")
 	for idx := 0; idx < nodeCount; idx++ {
 		var podIP string
 		var err error
 		for podIP, err = util.GetPodIP(nameMap[idx]); err != nil; podIP, err = util.GetPodIP(nameMap[idx]) {
-			log.Println("Retry")
+			log.Println("retry")
 			duration := 3000 + rand.Int31()%2000
 			time.Sleep(time.Duration(duration) * time.Millisecond)
 		}
 		podIPTable = append(podIPTable, podIP)
 	}
 
-	// Construct routes and apply
+	// Construct routes
+	routeList := sdnv1.RouteList{}
 	for idx1 := range routeTable {
 		route := sdnv1.Route{
 			Spec: sdnv1.RouteSpec{
@@ -51,7 +53,7 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int) error {
 		route.Kind = "Route"
 		route.Name = nameMap[idx1]
 		for idx2 := range routeTable[idx1] {
-			if routeTable[idx1][idx2] != -1 {
+			if idx1 != idx2 {
 				// New routes for target Pod
 				route.Spec.SubPaths = append(
 					route.Spec.SubPaths,
@@ -61,26 +63,49 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int) error {
 						NextIP:   util.GetVxlanIP(uint(routeTable[idx1][idx2]), uint(idx1)),
 					},
 				)
-			} else if idx1 != idx2 {
-				// Exising routes for target Pod, rewrite it with global IP
-				route.Spec.SubPaths = append(
-					route.Spec.SubPaths, 
-					sdnv1.SubPath{
-						Name: nameMap[idx2],
-						TargetIP: util.GetGlobalIP(uint(idx2)),
-						NextIP: util.GetVxlanIP(uint(idx2), uint(idx1)),
-					},
-				)
 			}
-
 		}
-		if err := restClient.Post().
+		routeList.Items = append(routeList.Items, route)
+	}
+
+	// Create/update routeList with RESTClient according to variable isFirstTime
+	if isFirstTime {
+		log.Println("Creating routes...")
+		for _, route := range routeList.Items {
+			if err := restClient.Post().
+				Namespace(namespace).
+				Resource("routes").
+				Body(&route).
+				Do(context.TODO()).
+				Into(nil); err != nil {
+				return fmt.Errorf("apply route failure: %v", err)
+			}
+		}
+	} else {
+		log.Println("Updating routes...")
+		routeVersionList := sdnv1.RouteList{}
+		resourceVersionMap := map[string]string{}
+		if err := restClient.Get().
 			Namespace(namespace).
 			Resource("routes").
-			Body(&route).
 			Do(context.TODO()).
-			Into(nil); err != nil {
-			return fmt.Errorf("APPLY ROUTE FAILURE: %v", err)
+			Into(&routeVersionList); err != nil {
+			return fmt.Errorf("get routelist error: %v", err)
+		}
+		for _, route := range routeVersionList.Items {
+			resourceVersionMap[route.Name] = route.ResourceVersion
+		}
+		for _, route := range routeList.Items {
+			route.ResourceVersion = resourceVersionMap[route.Name]
+			if err := restClient.Put().
+				Namespace(namespace).
+				Resource("routes").
+				Name(route.Name).
+				Body(&route).
+				Do(context.TODO()).
+				Into(nil); err != nil {
+				return fmt.Errorf("update route failure: %v", err)
+			}
 		}
 	}
 
@@ -93,12 +118,7 @@ func ComputeRoutes(distanceMap [][]float64, threadNum int) [][]int {
 	nodeCount := len(distanceMap)
 	routeTable := [][]int{}
 	for i := 0; i < nodeCount; i++ {
-		arr := []int{}
-		for j := 0; j < nodeCount; j++ {
-			arr = append(arr, -1)
-		}
-		arr[i] = i
-		routeTable = append(routeTable, arr)
+		routeTable = append(routeTable, make([]int, nodeCount))
 	}
 
 	// Start goroutine to compute routes
@@ -113,61 +133,49 @@ func ComputeRoutes(distanceMap [][]float64, threadNum int) [][]int {
 }
 
 // Return certain nodes' route table
-// routeTable: -1 means the target node is neighbour, other value means the next node packets are forwarded.
+// routeTable: means the next node packets forwarded.
 func ComputeRouteThread(distanceMap [][]float64, routeTable [][]int, threadID int, threadNum int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	nodeCount := len(distanceMap)
 	for idx := threadID; idx < nodeCount; idx += threadNum {
-		// Initialize vector result
-		result, notFound := []float64{}, []float64{}
-		dijkstraPath := [][]int{}
-		for i := 0; i < nodeCount; i++ {
-			result = append(result, 1e9)
-			notFound = append(notFound, distanceMap[idx][i])
-			dijkstraPath = append(dijkstraPath, []int{})
+		// Initialize some variables
+		visited := make([]bool, nodeCount)
+		dist := make([]float64, nodeCount)
+		copy(dist, distanceMap[idx])
+		visited[idx] = true
+		dijkstraPath := make([]int, nodeCount)	// Record next hop nodes(default is node(idx))
+		for i := range dijkstraPath {
+			dijkstraPath[i] = i
 		}
-		result[idx] = 0
-		notFound[idx] = -1
 
-		// Begin Dijkstra algorithm
+		// Use dijkstra algorithm to compute minimum distance and their routes
 		for i := 1; i < nodeCount; i++ {
-			// Find the shortest path point
-			var min float64 = 1e9
-			var minIndex = 0
+			// Use minDist and minIndex to record minimum distance and corresponding node's index
+			minDist, minIndex := 1e9, 0
+
+			// Iterate all nodes, find the next unvisted and nearst node to startNode.
 			for j := 0; j < nodeCount; j++ {
-				if notFound[j] > 0 && notFound[j] < min {
-					min = notFound[j]
+				if !visited[j] && dist[j] < minDist {
+					minDist = dist[j]
 					minIndex = j
 				}
 			}
 
-			// Store the shortest path point
-			result[minIndex] = min
-			notFound[minIndex] = -1
-
-			// Refresh notfound vector
+			// Iterate other nodes, update their minium distance to startNode
 			for j := 0; j < nodeCount; j++ {
-				if result[j] == 1e9 && distanceMap[minIndex][j] != 1e9 {
-					newDistance := result[minIndex] + distanceMap[minIndex][j]
-					if newDistance < notFound[j] {
-						notFound[j] = newDistance
-						dijkstraPath[j] = []int{}
-						dijkstraPath[j] = append(dijkstraPath[j], dijkstraPath[minIndex]...)
-						dijkstraPath[j] = append(dijkstraPath[j], minIndex)
-					}
+				if !visited[j] && dist[minIndex] + distanceMap[minIndex][j] < dist[j] {
+					dist[j] = dist[minIndex] + distanceMap[minIndex][j]
+					dijkstraPath[j] = dijkstraPath[minIndex]
 				}
 			}
+			
+			// Mark minIndex node as visited
+			visited[minIndex] = true
 		}
 
-		// Udpate routeTable
+		// Update next-hop table(routeTable)
 		for i := 0; i < nodeCount; i++ {
-			if len(dijkstraPath[i]) != 0 {
-				// Record the next hop's idx
-				routeTable[idx][i] = dijkstraPath[i][0]
-			} else {
-				// Means that they connect to each other directly.
-				routeTable[idx][i] = -1
-			}
+			routeTable[idx][i] = dijkstraPath[i]
 		}
 	}
 }

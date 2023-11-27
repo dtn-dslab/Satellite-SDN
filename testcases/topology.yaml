@@ -8,16 +8,10 @@ items:
   spec:
     links:
     - uid: 111111
-      local_intf: test-1
-      local_ip: 12.12.12.0/24
-      peer_intf: test-2
-      peer_ip: 12.12.12.1/24
-      peer_pod: sdntwo
-    - uid: 222222
-      local_intf: test-3
-      local_ip: 13.13.13.0/24
-      peer_intf: test-4
-      peer_ip: 13.13.13.1/24
+      local_intf: sdntwo
+      local_ip: 12.12.12.1/24
+      peer_intf: sdnone
+      peer_ip: 12.12.12.2/24
       peer_pod: sdntwo
 - apiVersion: y-young.github.io/v1
   kind: Topology
@@ -26,14 +20,26 @@ items:
   spec:
     links:
     - uid: 111111
-      local_intf: test-2
-      local_ip: 12.12.12.1/24
-      peer_intf: test-1
-      peer_ip: 12.12.12.0/24
+      local_intf: sdnone
+      local_ip: 12.12.12.2/24
+      peer_intf: sdntwo
+      peer_ip: 12.12.12.1/24
       peer_pod: sdnone
     - uid: 222222
-      local_intf: test-4
-      local_ip: 13.13.13.1/24
-      peer_intf: test-3
-      peer_ip: 13.13.13.0/24
-      peer_pod: sdnone
+      local_intf: sdnthree
+      local_ip: 23.23.23.1/24
+      peer_intf: sdnone
+      peer_ip: 23.23.23.2/24
+      peer_pod: sdnthree
+- apiVersion: y-young.github.io/v1
+  kind: Topology
+  metadata:
+    name: sdnthree
+  spec:
+    links:
+    - uid: 222222
+      local_intf: sdntwo
+      local_ip: 23.23.23.2/24
+      peer_intf: sdnthree
+      peer_ip: 23.23.23.1/24
+      peer_pod: sdntwo

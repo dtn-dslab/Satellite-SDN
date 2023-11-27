@@ -1,10 +1,15 @@
 package util
 
 import (
+	"fmt"
 	"os/exec"
 	"strings"
 	"time"
+
+	topov1 "github.com/y-young/kube-dtn/api/v1"
 )
+
+const DEBUG = true
 
 func InitEnvTimeCounter(startTimer time.Time) (float64, error) {
 	for ;!isPodOk() || !isTopoOk() || !isRouteOk(); {
@@ -42,4 +47,19 @@ func isTopoOk() bool {
 // TODO(ws): Judge route's state
 func isRouteOk() bool {
 	return true
+}
+
+func ShowTopology(topology *topov1.Topology) {
+	fmt.Printf("%s ->", topology.Name)
+	for _, topo := range topology.Spec.Links {
+		fmt.Printf(" %s", topo.PeerPod)
+	}
+	fmt.Print("\n")
+}
+
+func GetLinkName(name string) string {
+	if len(name) > 15 {
+		name = name[:15]
+	}
+	return name
 }
