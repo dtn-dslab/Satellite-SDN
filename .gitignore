@@ -24,5 +24,3 @@ Dockerfile.cross
 *.swp
 *.swo
 *~
-
-pkg/output

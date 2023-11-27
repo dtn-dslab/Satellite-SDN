@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: List
+items:
+- apiVersion: y-young.github.io/v1
+  kind: Topology
+  metadata:
+    name: sdn1
+  spec:
+    links:
+    - uid: 111111
+      local_intf: sdn2
+      local_ip: 12.12.12.1/24
+      peer_intf: sdn1
+      peer_ip: 12.12.12.2/24
+      peer_pod: sdn2
+    - uid: 222222
+      local_intf: sdn3
+      local_ip: 13.13.13.1/24
+      peer_intf: sdn1
+      peer_ip: 13.13.13.2/24
+      peer_pod: sdn3
+- apiVersion: y-young.github.io/v1
+  kind: Topology
+  metadata:
+    name: sdn2
+  spec:
+    links:
+    - uid: 111111
+      local_intf: sdn1
+      local_ip: 12.12.12.2/24
+      peer_intf: sdn2
+      peer_ip: 12.12.12.1/24
+      peer_pod: sdn1
+- apiVersion: y-young.github.io/v1
+  kind: Topology
+  metadata:
+    name: sdn3
+  spec:
+    links:
+    - uid: 222222
+      local_intf: sdn1
+      local_ip: 13.13.13.2/24
+      peer_intf: sdn3
+      peer_ip: 13.13.13.1/24
+      peer_pod: sdn1
