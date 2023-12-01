@@ -31,7 +31,7 @@ func PodSyncLoopV2(indexUUIDMap map[int]string, uuidAllocNodeMap map[string]stri
 	podList := []*v1.PodApplyConfiguration{}
 	for index, uuid := range indexUUIDMap {
 		sat_name := uuid
-		image_name := "electronicwaste/podserver:v11"
+		image_name := "electronicwaste/podserver:v12"
 		image_pull_policy := "IfNotPresent"
 		flowpvc := "podserver-wangshao-pvc"
 		flow_mount_path := "/flow"

@@ -28,7 +28,7 @@ func PodSyncLoop(nameMap map[int]string) error {
 	// TODO(ws): Store pod name in database
 	for idx := 0; idx < len(nameMap); idx++ {
 		sat_name := nameMap[idx]
-		image_name := "electronicwaste/podserver:v11"
+		image_name := "electronicwaste/podserver:v12"
 		image_pull_policy := "IfNotPresent"
 		flowpvc := "podserver-wangshao-pvc"
 		flow_mount_path := "/flow"
