@@ -9,7 +9,9 @@ import (
 	topov1 "github.com/y-young/kube-dtn/api/v1"
 )
 
-const DEBUG = true
+const (
+	DEBUG = true
+)
 
 func InitEnvTimeCounter(startTimer time.Time) (float64, error) {
 	for ;!isPodOk() || !isTopoOk() || !isRouteOk(); {

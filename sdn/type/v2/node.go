@@ -76,8 +76,8 @@ func (n *Node) Position() (x, y, z float64) {
 
 	// Construct params for conversion
 	obsCoords := gosate.LatLong{
-		Latitude: n.Latitude,
-		Longitude: n.Longitude,
+		Latitude: n.Latitude * math.Pi / 180.0,
+		Longitude: n.Longitude * math.Pi / 180.0,
 	}
 	alt := n.Altitude
 	jday := gosate.JDay(
@@ -100,8 +100,8 @@ func (n *Node) PositionAtTime(t time.Time) (x, y, z float64) {
 	
 	// Construct params for conversion
 	obsCoords := gosate.LatLong{
-		Latitude: n.Latitude,
-		Longitude: n.Longitude,
+		Latitude: n.Latitude * math.Pi / 180.0,
+		Longitude: n.Longitude * math.Pi / 180.0,
 	}
 	alt := n.Altitude
 	jday := gosate.JDay(

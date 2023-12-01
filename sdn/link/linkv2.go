@@ -27,6 +27,11 @@ func GetMinDistanceNode(node *satv2.Node, groups []*satv2.Group, curTime time.Ti
 			}
 		}
 	}
+	// if util.DEBUG {
+	// 	x, y, z := node.PositionAtTime(curTime)
+	// 	log.Printf("node: %s x: %f y: %f z: %f", node.UUID, x, y, z)
+	// 	log.Printf("node: %s -> min_node: %s, timestamp is %v, distance is: %f", node.UUID, minUUID, curTime, minDistance)
+	// }
 	return minUUID
 }
 
