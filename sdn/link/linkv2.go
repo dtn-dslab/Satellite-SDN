@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"sync"
 	satv2 "ws/dtn-satellite-sdn/sdn/type/v2"
 	"ws/dtn-satellite-sdn/sdn/util"
 
@@ -27,11 +28,6 @@ func GetMinDistanceNode(node *satv2.Node, groups []*satv2.Group, curTime time.Ti
 			}
 		}
 	}
-	// if util.DEBUG {
-	// 	x, y, z := node.PositionAtTime(curTime)
-	// 	log.Printf("node: %s x: %f y: %f z: %f", node.UUID, x, y, z)
-	// 	log.Printf("node: %s -> min_node: %s, timestamp is %v, distance is: %f", node.UUID, minUUID, curTime, minDistance)
-	// }
 	return minUUID
 }
 
@@ -175,19 +171,38 @@ func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int, isFirstTi
 	}
 	if isFirstTime {
 		log.Println("creating topologies...")
-		for _, topo := range topoList.Items {
-			if util.DEBUG {
-				util.ShowTopology(&topo)
-			}
-			if err := restClient.Post().
-				Namespace(namespace).
-				Resource("topologies").
-				Body(&topo).
-				Do(context.TODO()).
-				Into(nil); err != nil {
-				return fmt.Errorf("apply topology error: %v", err)
-			}
+		// for _, topo := range topoList.Items {
+		// 	if util.DEBUG {
+		// 		util.ShowTopology(&topo)
+		// 	}
+		// 	if err := restClient.Post().
+		// 		Namespace(namespace).
+		// 		Resource("topologies").
+		// 		Body(&topo).
+		// 		Do(context.TODO()).
+		// 		Into(nil); err != nil {
+		// 		return fmt.Errorf("apply topology error: %v", err)
+		// 	}
+		// }
+		wg := new(sync.WaitGroup)
+		wg.Add(util.ThreadNums)
+		for threadId := 0; threadId < util.ThreadNums; threadId++ {
+			go func(id int){
+				for topoId := id; topoId < len(topoList.Items); topoId += util.ThreadNums {
+					topo := topoList.Items[topoId]
+					if err := restClient.Post().
+						Namespace(namespace).
+						Resource("topologies").
+						Body(&topo).
+						Do(context.TODO()).
+						Into(nil); err != nil {
+						log.Fatalf("apply topology err: %v", err)
+					}
+				}
+				wg.Done()
+			}(threadId)
 		}
+		wg.Wait()
 	} else {
 		log.Println("updating topologies...")
 		resourceVersionMap := map[string]string{}
@@ -202,21 +217,42 @@ func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int, isFirstTi
 		for _, topo := range topoVersionList.Items {
 			resourceVersionMap[topo.Name] = topo.ResourceVersion
 		}
-		for _, topo := range topoList.Items {
-			if util.DEBUG {
-				util.ShowTopology(&topo)
-			}
-			topo.ResourceVersion = resourceVersionMap[topo.Name]
-			if err := restClient.Put().
-				Namespace(namespace).
-				Resource("topologies").
-				Name(topo.Name).
-				Body(&topo).
-				Do(context.TODO()).
-				Into(nil); err != nil {
-				return fmt.Errorf("update topology error: %v", err)
-			}
+		// for _, topo := range topoList.Items {
+		// 	if util.DEBUG {
+		// 		util.ShowTopology(&topo)
+		// 	}
+		// 	topo.ResourceVersion = resourceVersionMap[topo.Name]
+		// 	if err := restClient.Put().
+		// 		Namespace(namespace).
+		// 		Resource("topologies").
+		// 		Name(topo.Name).
+		// 		Body(&topo).
+		// 		Do(context.TODO()).
+		// 		Into(nil); err != nil {
+		// 		return fmt.Errorf("update topology error: %v", err)
+		// 	}
+		// }
+		wg := new(sync.WaitGroup)
+		wg.Add(util.ThreadNums)
+		for threadId := 0; threadId < util.ThreadNums; threadId++ {
+			go func(id int){
+				for topoId := id; topoId < len(topoList.Items); topoId += util.ThreadNums {
+					topo := topoList.Items[topoId]
+					topo.ResourceVersion = resourceVersionMap[topo.Name]
+					if err := restClient.Put().
+						Namespace(namespace).
+						Resource("topologies").
+						Name(topo.Name).
+						Body(&topo).
+						Do(context.TODO()).
+						Into(nil); err != nil {
+						log.Fatalf("update topology err: %v", err)
+					}
+				}
+				wg.Done()
+			}(threadId)
 		}
+		wg.Wait()
 	}
 	
 	return nil

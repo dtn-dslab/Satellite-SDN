@@ -1,7 +1,6 @@
 package clientset
 
 import (
-	"fmt"
 	"sort"
 	"time"
 
@@ -64,19 +63,16 @@ type OrbitInfo struct {
 func ParseParamsQimeng(params map[string]interface{}) (unixTimeStamp int64, satellites, stations, missiles []map[string]interface{}) {
 	unixTimeStamp = (int64) (params["unixTimeStamp"].(float64))
 	if params["satellites"] != nil {
-		fmt.Println(1)
 		for _, intf := range params["satellites"].([]interface{}) {
 			satellites = append(satellites, intf.(map[string]interface{}))
 		}
 	}
 	if params["stations"] != nil {
-		fmt.Println(1)
 		for _, intf := range params["stations"].([]interface{}) {
 			stations = append(stations, intf.(map[string]interface{}))
 		}
 	}
 	if params["missiles"] != nil {
-		fmt.Println(1)
 		for _, intf := range params["missiles"].([]interface{}) {
 			missiles = append(missiles, intf.(map[string]interface{}))
 		}

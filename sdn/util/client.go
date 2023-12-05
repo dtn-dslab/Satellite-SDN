@@ -17,9 +17,11 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/flowcontrol"
 	"k8s.io/client-go/util/homedir"
 
 	sdnv1 "ws/dtn-satellite-sdn/api/v1"
+
 	topov1 "github.com/y-young/kube-dtn/api/v1"
 )
 
@@ -55,6 +57,7 @@ func GetClientset() (*kubernetes.Clientset, error) {
 	if err != nil {
 		return nil, fmt.Errorf("CONFIG ERROR: %v", err)
 	}
+	config.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(1000, 1000)
 
 	// create the clientset
 	clientset, err = kubernetes.NewForConfig(config)
@@ -86,6 +89,7 @@ func GetRouteClient() (*rest.RESTClient, error) {
 	config.ContentConfig.GroupVersion = &sdnv1.GroupVersion
 	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 	config.UserAgent = rest.DefaultKubernetesUserAgent()
+	config.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(1000, 1000)
 
 	routeclient, err = rest.RESTClientFor(config)
 	return routeclient, err
@@ -116,6 +120,7 @@ func GetTopoClient() (*rest.RESTClient, error) {
 	config.ContentConfig.GroupVersion = &topov1.GroupVersion
 	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 	config.UserAgent = rest.DefaultKubernetesUserAgent()
+	config.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(1000, 1000)
 
 	topoclient, err := rest.RESTClientFor(config)
 	return topoclient, err
