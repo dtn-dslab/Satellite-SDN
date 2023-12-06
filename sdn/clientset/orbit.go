@@ -103,12 +103,12 @@ func NewOrbitInfo(params map[string]interface{}) *OrbitInfo {
 			}
 			info.LowOrbitSats[trackID].Nodes = append(info.LowOrbitSats[trackID].Nodes, node)
 		} else {
-			trackID := node.TrackID
-			node.Type = satv2.HIGHORBIT
-			if _, ok := info.HighOrbitSats[trackID]; !ok {
-				info.HighOrbitSats[trackID] = satv2.NewSatGroup(satv2.HIGHORBIT, trackID)
-			}
-			info.HighOrbitSats[trackID].Nodes = append(info.HighOrbitSats[trackID].Nodes, node)
+			// trackID := node.TrackID
+			// node.Type = satv2.HIGHORBIT
+			// if _, ok := info.HighOrbitSats[trackID]; !ok {
+			// 	info.HighOrbitSats[trackID] = satv2.NewSatGroup(satv2.HIGHORBIT, trackID)
+			// }
+			// info.HighOrbitSats[trackID].Nodes = append(info.HighOrbitSats[trackID].Nodes, node)
 		}
 	}
 	for _, group := range info.LowOrbitSats {

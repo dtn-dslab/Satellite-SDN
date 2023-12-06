@@ -39,7 +39,7 @@ func PodSyncLoopV2(meta *PodMetadata, uuidAllocNodeMap map[string]string) error 
 	podList := []*v1.PodApplyConfiguration{}
 	for index, uuid := range meta.IndexUUIDMap {
 		sat_name := uuid
-		image_name := "electronicwaste/podserver:v12"
+		image_name := fmt.Sprintf("%s:%s", util.POD_IMAGE_NAME, util.POD_IMAGE_TAG)
 		image_pull_policy := "IfNotPresent"
 		flowpvc := "podserver-wangshao-pvc"
 		flow_mount_path := "/flow"
