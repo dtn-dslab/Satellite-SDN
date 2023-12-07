@@ -20,4 +20,5 @@ for str in $strs; do
 done
 
 # Get route logs
-kubectl logs $route_controller -n sdn-kubebuilder-system | grep $1
+# kubectl logs $route_controller -n sdn-kubebuilder-system | grep $1
+kubectl logs $route_controller -n sdn-kubebuilder-system

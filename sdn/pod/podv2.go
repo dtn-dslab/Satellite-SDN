@@ -3,6 +3,8 @@ package pod
 import (
 	"context"
 	"fmt"
+	"log"
+	"sync"
 	"ws/dtn-satellite-sdn/sdn/util"
 
 	corev1 "k8s.io/api/core/v1"
@@ -10,11 +12,17 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/core/v1"
 )
 
+type PodMetadata struct {
+	IndexUUIDMap map[int]string
+	StationIdxMin int
+	StationNum int
+}
+
 // Function: PodSyncLoopV2
 // Description: Apply pods in which low-orbit satellites in one group are deployed to the same node.
 // 1. indexUUIDMap: node's index -> node's uuid.
 // 2. uuiAllocNodeMap: node's uuid -> allocNode's name(node1.dtn.lab), only stores low-orbit satellites's pairs.
-func PodSyncLoopV2(indexUUIDMap map[int]string, uuidAllocNodeMap map[string]string) error {
+func PodSyncLoopV2(meta *PodMetadata, uuidAllocNodeMap map[string]string) error {
 	// get clientset
 	clientset, err := util.GetClientset()
 	if err != nil {
@@ -29,17 +37,32 @@ func PodSyncLoopV2(indexUUIDMap map[int]string, uuidAllocNodeMap map[string]stri
 
 	// Construct Pods
 	podList := []*v1.PodApplyConfiguration{}
-	for index, uuid := range indexUUIDMap {
+	for index, uuid := range meta.IndexUUIDMap {
 		sat_name := uuid
-		image_name := "electronicwaste/podserver:v11"
+		image_name := fmt.Sprintf("%s:%s", util.POD_IMAGE_NAME, util.POD_IMAGE_TAG)
 		image_pull_policy := "IfNotPresent"
 		flowpvc := "podserver-wangshao-pvc"
 		flow_mount_path := "/flow"
 		prometheus_port_name := "prometheus"
 		var port, prometheus_port, flow_port int32 = 8080, 2112, 5202
+		args := fmt.Sprintf(
+			"export PODNAME=%s;" +
+			"./start.sh %s %d", 
+			uuid, util.GetGlobalIP(uint(index)), index+5000,
+		)
 		labels := map[string]string{
 			"k8s-app": "iperf",
 		}
+		if index >= meta.StationIdxMin && index < meta.StationIdxMin + meta.StationNum {
+			if index < meta.StationIdxMin + meta.StationNum / 2{
+				labels["type"] = "client"
+			} else {
+				labels["type"] = "server"
+				serverIP := util.GetGlobalIP(uint(index - meta.StationNum / 2))
+				args = fmt.Sprintf("export SERVERIP=%s;" + args, serverIP)
+			}
+		}
+		
 		podConfig := &v1.PodApplyConfiguration{}
 		podConfig = podConfig.WithAPIVersion("v1")
 		podConfig = podConfig.WithKind("Pod")
@@ -75,11 +98,7 @@ func PodSyncLoopV2(indexUUIDMap map[int]string, uuidAllocNodeMap map[string]stri
 							"-c",
 						},
 						Args: []string {
-							fmt.Sprintf(
-								"export PODNAME=%s;" +
-								"./start.sh %s %d", 
-								uuid, util.GetGlobalIP(uint(index)), index+5000,
-							),
+							args,
 						},
 						SecurityContext: &v1.SecurityContextApplyConfiguration{
 							Capabilities: &v1.CapabilitiesApplyConfiguration{
@@ -116,10 +135,24 @@ func PodSyncLoopV2(indexUUIDMap map[int]string, uuidAllocNodeMap map[string]stri
 		FieldManager: "application/apply-patch",
 	}
 	// Apply pods
-	for _, pod := range podList {
-		if _, err := clientset.CoreV1().Pods(namespace).Apply(context.TODO(), pod, opts); err != nil {
-			return fmt.Errorf("apply pod error: %v", err)
-		}
+	wg := new(sync.WaitGroup)
+	wg.Add(util.ThreadNums)
+	for threadId := 0; threadId < util.ThreadNums; threadId++ {
+		go func(id int){
+			for podId := id; podId < len(podList); podId += util.ThreadNums {
+				pod := podList[podId]
+				if _, err := clientset.CoreV1().Pods(namespace).Apply(context.TODO(), pod, opts); err != nil {
+					log.Fatalf("apply pod error: %v", err)
+				}
+			}
+			wg.Done()
+		}(threadId)
 	}
+	wg.Wait()
+	// for _, pod := range podList {
+	// 	if _, err := clientset.CoreV1().Pods(namespace).Apply(context.TODO(), pod, opts); err != nil {
+	// 		return fmt.Errorf("apply pod error: %v", err)
+	// 	}
+	// }
 	return nil
 }

@@ -20,5 +20,6 @@ for str in $strs; do
 done
 
 # Get logs concerned with pod with name $1
-kubectl logs $topo_pod_name -n kubedtn | grep $1
+kubectl logs $topo_pod_name -n kubedtn
+# kubectl logs $topo_pod_name -n kubedtn | grep $1
 

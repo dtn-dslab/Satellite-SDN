@@ -10,4 +10,4 @@ elif [ $# -gt 1 ]; then
 fi
 
 # Get route logs in pod
-kubectl exec -it $1 cat route.log
+kubectl exec -it $1 -- cat route.log

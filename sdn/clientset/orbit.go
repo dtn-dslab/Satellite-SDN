@@ -62,14 +62,20 @@ type OrbitInfo struct {
 // 1. param: Message from Qimeng
 func ParseParamsQimeng(params map[string]interface{}) (unixTimeStamp int64, satellites, stations, missiles []map[string]interface{}) {
 	unixTimeStamp = (int64) (params["unixTimeStamp"].(float64))
-	for _, intf := range params["satellites"].([]interface{}) {
-		satellites = append(satellites, intf.(map[string]interface{}))
+	if params["satellites"] != nil {
+		for _, intf := range params["satellites"].([]interface{}) {
+			satellites = append(satellites, intf.(map[string]interface{}))
+		}
 	}
-	for _, intf := range params["stations"].([]interface{}) {
-		stations = append(stations, intf.(map[string]interface{}))
+	if params["stations"] != nil {
+		for _, intf := range params["stations"].([]interface{}) {
+			stations = append(stations, intf.(map[string]interface{}))
+		}
 	}
-	for _, intf := range params["missiles"].([]interface{}) {
-		missiles = append(missiles, intf.(map[string]interface{}))
+	if params["missiles"] != nil {
+		for _, intf := range params["missiles"].([]interface{}) {
+			missiles = append(missiles, intf.(map[string]interface{}))
+		}
 	}
 	return
 }
@@ -97,12 +103,12 @@ func NewOrbitInfo(params map[string]interface{}) *OrbitInfo {
 			}
 			info.LowOrbitSats[trackID].Nodes = append(info.LowOrbitSats[trackID].Nodes, node)
 		} else {
-			trackID := node.TrackID
-			node.Type = satv2.HIGHORBIT
-			if _, ok := info.HighOrbitSats[trackID]; !ok {
-				info.HighOrbitSats[trackID] = satv2.NewSatGroup(satv2.HIGHORBIT, trackID)
-			}
-			info.HighOrbitSats[trackID].Nodes = append(info.HighOrbitSats[trackID].Nodes, node)
+			// trackID := node.TrackID
+			// node.Type = satv2.HIGHORBIT
+			// if _, ok := info.HighOrbitSats[trackID]; !ok {
+			// 	info.HighOrbitSats[trackID] = satv2.NewSatGroup(satv2.HIGHORBIT, trackID)
+			// }
+			// info.HighOrbitSats[trackID].Nodes = append(info.HighOrbitSats[trackID].Nodes, node)
 		}
 	}
 	for _, group := range info.LowOrbitSats {
