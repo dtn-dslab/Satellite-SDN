@@ -36,8 +36,6 @@ type Network struct {
 	Metadata *OrbitMeta
 }
 
-const ThreadNums = 64
-
 func NewNetwork(info *OrbitInfo) *Network {
 	network := Network{}
 	network.UpdateNetwork(info)
@@ -60,11 +58,11 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 
 	// 2. Compute DistanceMap(pure, not combined with topology)
 	var wg sync.WaitGroup
-	wg.Add(ThreadNums)
-	for threadId := 0; threadId < ThreadNums; threadId++ {
+	wg.Add(util.ThreadNums)
+	for threadId := 0; threadId < util.ThreadNums; threadId++ {
 		go func(id int) {
 			// Parition tasks with different nodes
-			for nodeID := id; nodeID < totalNodesNum; nodeID += ThreadNums {
+			for nodeID := id; nodeID < totalNodesNum; nodeID += util.ThreadNums {
 				node := n.Metadata.UUIDNodeMap[n.Metadata.IndexUUIDMap[nodeID]]
 				for idx := 0; idx < totalNodesNum; idx++ {
 					targetNode := n.Metadata.UUIDNodeMap[n.Metadata.IndexUUIDMap[idx]]
@@ -77,16 +75,16 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 	wg.Wait()
 
 	// 3. Compute low-orbit topology
-	wg.Add(ThreadNums)
+	wg.Add(util.ThreadNums)
 	lowOrbitGroupNum := len(info.LowOrbitSats)
 	lowOrbitGroupKeys := make([]int, 0, lowOrbitGroupNum)	// Store trackID in LowOrbitSats
 	for key, _ := range info.LowOrbitSats {
 		lowOrbitGroupKeys = append(lowOrbitGroupKeys, key)
 	}
-	for threadId := 0; threadId < ThreadNums; threadId++ {
+	for threadId := 0; threadId < util.ThreadNums; threadId++ {
 		go func(id int) {
 			// Partition tasks with trackID in LowOrbitSats
-			for trackIDIdx := id; trackIDIdx < lowOrbitGroupNum; trackIDIdx += ThreadNums {
+			for trackIDIdx := id; trackIDIdx < lowOrbitGroupNum; trackIDIdx += util.ThreadNums {
 				curTrackID := lowOrbitGroupKeys[trackIDIdx]
 				sameOrbitTopoMap := link.GetTopoInGroup(info.LowOrbitSats[curTrackID])
 				diffOrbitTopoMap := link.GetTopoAmongLowOrbitGroup(
@@ -147,11 +145,11 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 			distanceMapForRoute[i][j] = 1e9
 		}
 	}
-	wg.Add(ThreadNums)
-	for threadID := 0; threadID < ThreadNums; threadID++ {
+	wg.Add(util.ThreadNums)
+	for threadID := 0; threadID < util.ThreadNums; threadID++ {
 		go func(id int) {
 			// Partition tasks with TopoGraph's row set.
-			for idx1 := id; idx1 < totalNodesNum; idx1 += ThreadNums {
+			for idx1 := id; idx1 < totalNodesNum; idx1 += util.ThreadNums {
 				for idx2 := 0; idx2 < totalNodesNum; idx2++ {
 					// Set distanceMapForRoute[idx1][idx2]
 					if n.TopoGraph[idx1][idx2] {
@@ -164,7 +162,7 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 	}
 	wg.Wait()
 	// Call route calculation func in package route
-	n.RouteGraph = route.ComputeRoutes(distanceMapForRoute, ThreadNums)
+	n.RouteGraph = route.ComputeRoutes(distanceMapForRoute, util.ThreadNums)
 
 	if util.DEBUG {
 		fmt.Println(n.Metadata.IndexUUIDMap)

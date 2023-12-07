@@ -263,17 +263,32 @@ func (client *SDNClient) GetDistanceHanlder(w http.ResponseWriter, r *http.Reque
 func (client *SDNClient) ApplyPod(nodeNum int) error {
 	allocIdx, uuidAllocNodeMap := 0, map[string]string{}
 	kubeNodeList, _ := util.GetSlaveNodes(nodeNum)
-	log.Println("Applying pod...")
-	// Currently, we only need to allocate low-orbit satellites in one group to the same physical node.
 	client.RWLock.RLock()
 	defer client.RWLock.RUnlock()
+	log.Println("Applying pod...")
+	// Currently, we only need to allocate low-orbit satellites in one group to the same physical node.
+	capacity := map[string]int{}
+	for k, v := range util.NodeCapacity {
+		capacity[k] = v
+	}
 	for _, group := range client.OrbitClient.LowOrbitSats {
 		for _, node := range group.Nodes {
 			uuidAllocNodeMap[node.UUID] = kubeNodeList[allocIdx]
 		}
-		allocIdx = (allocIdx + 1) % len(kubeNodeList)
+		capacity[kubeNodeList[allocIdx]]--
+		if capacity[kubeNodeList[allocIdx]] == 0 {
+			allocIdx = (allocIdx + 1) % len(kubeNodeList)
+			capacity[kubeNodeList[allocIdx]] = util.NodeCapacity[kubeNodeList[allocIdx]] // restore the value at beginning for next round
+		}
 	}
-	return pod.PodSyncLoopV2(client.OrbitClient.GetIndexUUIDMap(), uuidAllocNodeMap)
+	podMeta := pod.PodMetadata{
+		IndexUUIDMap: client.OrbitClient.GetIndexUUIDMap(),
+		StationIdxMin: 
+			client.OrbitClient.Metadata.LowOrbitNum + 
+			client.OrbitClient.Metadata.HighOrbitNum,
+		StationNum: client.OrbitClient.Metadata.GroundStationNum,
+	}
+	return pod.PodSyncLoopV2(&podMeta, uuidAllocNodeMap)
 }
 
 // Function: ApplyTopo
