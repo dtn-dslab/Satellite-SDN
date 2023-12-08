@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	DEBUG = false
+	DEBUG = true
 	POD_IMAGE_NAME = "electronicwaste/podserver"
-	POD_IMAGE_TAG = "v20"
+	POD_IMAGE_TAG = "v23"
 	ThreadNums = 64
 )
 
