@@ -130,6 +130,7 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 		wg.Wait()
 	} else {
 		log.Println("Updating routes...")
+		log.Println("Fetch route resources version")
 		routeVersionList := sdnv1.RouteList{}
 		resourceVersionMap := map[string]string{}
 		if err := restClient.Get().
@@ -139,6 +140,7 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 			Into(&routeVersionList); err != nil {
 			return fmt.Errorf("get routelist error: %v", err)
 		}
+		log.Println("Update route resources version")
 		for _, route := range routeVersionList.Items {
 			resourceVersionMap[route.Name] = route.ResourceVersion
 		}
@@ -154,6 +156,7 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 		// 		return fmt.Errorf("update route failure: %v", err)
 		// 	}
 		// }
+		log.Println("Updating to API Server")
 		wg := new(sync.WaitGroup)
 		wg.Add(util.ThreadNums)
 		for threadId := 0; threadId < util.ThreadNums; threadId++ {
