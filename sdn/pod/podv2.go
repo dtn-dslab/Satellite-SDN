@@ -8,6 +8,7 @@ import (
 	"ws/dtn-satellite-sdn/sdn/util"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/client-go/applyconfigurations/core/v1"
 )
@@ -45,14 +46,15 @@ func PodSyncLoopV2(meta *PodMetadata, uuidAllocNodeMap map[string]string) error 
 		flow_mount_path := "/flow"
 		prometheus_port_name := "prometheus"
 		var port, prometheus_port, flow_port int32 = 8080, 2112, 5202
+		labels := map[string]string{
+			"k8s-app": "iperf",
+		}
 		args := fmt.Sprintf(
 			"export PODNAME=%s;" +
 			"./start.sh %s %d", 
 			uuid, util.GetGlobalIP(uint(index)), index+5000,
 		)
-		labels := map[string]string{
-			"k8s-app": "iperf",
-		}
+		// The flow configuration of ground station
 		if index >= meta.StationIdxMin && index < meta.StationIdxMin + meta.StationNum {
 			if index < meta.StationIdxMin + meta.StationNum / 2{
 				labels["type"] = "client"
@@ -62,7 +64,6 @@ func PodSyncLoopV2(meta *PodMetadata, uuidAllocNodeMap map[string]string) error 
 				args = fmt.Sprintf("export SERVERIP=%s;" + args, serverIP)
 			}
 		}
-		
 		podConfig := &v1.PodApplyConfiguration{}
 		podConfig = podConfig.WithAPIVersion("v1")
 		podConfig = podConfig.WithKind("Pod")
@@ -107,6 +108,14 @@ func PodSyncLoopV2(meta *PodMetadata, uuidAllocNodeMap map[string]string) error 
 								},
 							},
 						},
+						Resources: &v1.ResourceRequirementsApplyConfiguration{
+							Limits: &corev1.ResourceList{
+								corev1.ResourceCPU: *resource.NewMilliQuantity(500, resource.DecimalSI),
+							},
+							Requests: &corev1.ResourceList{
+								corev1.ResourceCPU: *resource.NewMilliQuantity(250, resource.DecimalSI),
+							},
+						},
 					},
 				},
 				Volumes: []v1.VolumeApplyConfiguration{
@@ -149,10 +158,5 @@ func PodSyncLoopV2(meta *PodMetadata, uuidAllocNodeMap map[string]string) error 
 		}(threadId)
 	}
 	wg.Wait()
-	// for _, pod := range podList {
-	// 	if _, err := clientset.CoreV1().Pods(namespace).Apply(context.TODO(), pod, opts); err != nil {
-	// 		return fmt.Errorf("apply pod error: %v", err)
-	// 	}
-	// }
 	return nil
 }

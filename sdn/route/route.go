@@ -99,16 +99,6 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 	// Create/update routeList with RESTClient according to variable isFirstTime
 	if isFirstTime {
 		log.Println("Creating routes...")
-		// for _, route := range routeList.Items {
-		// 	if err := restClient.Post().
-		// 		Namespace(namespace).
-		// 		Resource("routes").
-		// 		Body(&route).
-		// 		Do(context.TODO()).
-		// 		Into(nil); err != nil {
-		// 		return fmt.Errorf("apply route failure: %v", err)
-		// 	}
-		// }
 		wg := new(sync.WaitGroup)
 		wg.Add(util.ThreadNums)
 		for threadId := 0; threadId < util.ThreadNums; threadId++ {
@@ -144,18 +134,6 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 		for _, route := range routeVersionList.Items {
 			resourceVersionMap[route.Name] = route.ResourceVersion
 		}
-		// for _, route := range routeList.Items {
-		// 	route.ResourceVersion = resourceVersionMap[route.Name]
-		// 	if err := restClient.Put().
-		// 		Namespace(namespace).
-		// 		Resource("routes").
-		// 		Name(route.Name).
-		// 		Body(&route).
-		// 		Do(context.TODO()).
-		// 		Into(nil); err != nil {
-		// 		return fmt.Errorf("update route failure: %v", err)
-		// 	}
-		// }
 		log.Println("Updating to API Server")
 		wg := new(sync.WaitGroup)
 		wg.Add(util.ThreadNums)

@@ -91,16 +91,12 @@ func CreateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]i
 		return fmt.Errorf("Pod sync failed: %v\n", err)
 	}
 
-	endInitTime := time.Now()
-
 	// Invoke route's sync loop
 	log.Println("Route Sync...")
 	err = route.RouteSyncLoop(nameMap, routeTable, true)
 	if err != nil {
 		return fmt.Errorf("Route sync failed: %v\n", err)
 	}
-	endApplyRouteTime := time.Now()
-	log.Printf("Apply route time %vs", endApplyRouteTime.Sub(endInitTime).Seconds())
 
 	return nil
 }
