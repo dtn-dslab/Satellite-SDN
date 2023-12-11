@@ -1,3 +1,5 @@
 #!/bin/bash
 
-~/dtn-satellite-sdn/bin/sdnctl pos -t ~/dtn-satellite-sdn/sdn/data/starlink863.txt -n 3
+CTL=$(cd "$(dirname $0)/../bin" && pwd)/sdnctl
+
+$CTL pos -t ~/dtn-satellite-sdn/sdn/data/starlink863.txt -n 3
