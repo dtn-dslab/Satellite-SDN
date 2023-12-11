@@ -48,3 +48,6 @@ done
 # send "$PASS\r"
 # expect "#"
 # EOF
+#   additionalScrapeConfigs:
+#     name: container-configs
+#     key: prometheus-container.yaml

@@ -69,7 +69,7 @@ func TestGenerateLinkYaml(t *testing.T) {
 	nameMap := constellation.GetNameMap()
 	connGraph := GenerateConnGraph(constellation)
 	edgeSet := ConvertConnGraphToEdgeSet(connGraph)
-	err = LinkSyncLoop(nameMap, edgeSet)
+	err = LinkSyncLoop(nameMap, edgeSet, true)
 	if err != nil {
 		t.Error(err)
 	}

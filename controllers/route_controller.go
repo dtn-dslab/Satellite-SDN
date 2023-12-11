@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	sdnv1 "ws/dtn-satellite-sdn/api/v1"
@@ -77,6 +78,8 @@ func (r *RouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		add, del, update = r.CalcDiff(route.Status.SubPaths, route.Spec.SubPaths)
 	}
 
+	log.Info("Route changed", "add", add, "del", del, "update", update)
+
 	if err := r.DelSubpaths(ctx, route.Spec.PodIP, del); err != nil {
 		log.Error(err, "Failed to delete subpaths")
 		return ctrl.Result{}, err
@@ -98,7 +101,7 @@ func (r *RouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		log.Error(err, "Failed to update status")
 		return ctrl.Result{}, err
 	}
-
+	
 	return ctrl.Result{}, nil
 }
 
@@ -111,15 +114,6 @@ func (r *RouteReconciler) AddSubpaths(ctx context.Context, podIP string, subpath
 		return nil
 	}
 
-	// Get pod's ip by invoking `GetPodIP` func periodically
-	// var podIP string
-	// var err error
-	// for podIP, err = GetPodIP(podName); err != nil; {
-	// 	log.Info("Retry!")
-	// 	duration := 3000 + rand.Int31()%2000
-	// 	time.Sleep(time.Duration(duration) * time.Millisecond)
-	// 	podIP, err = GetPodIP(podName)
-	// }
 	postURL := "http://" + podIP + ":8080" + "/route/apply"
 	jsonVal, _ := json.Marshal(subpaths)
 	resp, err := http.Post(
@@ -145,15 +139,6 @@ func (r *RouteReconciler) DelSubpaths(ctx context.Context, podIP string, subpath
 		return nil
 	}
 
-	// Get pod's ip by invoking `GetPodIP` func periodically
-	// var podIP string
-	// var err error
-	// for podIP, err = GetPodIP(podName); err != nil; {
-	// 	log.Info("Retry!")
-	// 	duration := 3000 + rand.Int31()%2000
-	// 	time.Sleep(time.Duration(duration) * time.Millisecond)
-	// 	podIP, err = GetPodIP(podName)
-	// }
 	postURL := "http://" + podIP + ":8080" + "/route/del"
 	jsonVal, _ := json.Marshal(subpaths)
 	resp, err := http.Post(
@@ -179,15 +164,6 @@ func (r *RouteReconciler) UpdateSubpaths(ctx context.Context, podIP string, subp
 		return nil
 	}
 
-	// Get pod's ip by invoking `GetPodIP` func periodically
-	// var podIP string
-	// var err error
-	// for podIP, err = GetPodIP(podName); err != nil; {
-	// 	log.Info("Retry!")
-	// 	duration := 3000 + rand.Int31()%2000
-	// 	time.Sleep(time.Duration(duration) * time.Millisecond)
-	// 	podIP, err = GetPodIP(podName)
-	// }
 	postURL := "http://" + podIP + ":8080" + "/route/update"
 	jsonVal, _ := json.Marshal(subpaths)
 	resp, err := http.Post(
@@ -198,7 +174,7 @@ func (r *RouteReconciler) UpdateSubpaths(ctx context.Context, podIP string, subp
 	if err != nil {
 		log.Info("Post Error", "PostURL", postURL, "Error", err)
 	} else if resp != nil && resp.StatusCode != http.StatusOK {
-		log.Info("Add subpaths failed", "StatusCode", resp.StatusCode, "PostURL", postURL)
+		log.Info("Update subpaths failed", "StatusCode", resp.StatusCode, "PostURL", postURL)
 	}
 
 	return err
@@ -249,31 +225,9 @@ func (r *RouteReconciler) CalcDiff(old []sdnv1.SubPath, new []sdnv1.SubPath) (ad
 func (r *RouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&sdnv1.Route{}).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: 64,
+		}).
 		Complete(r)
 }
 
-// Get a pod's ip via `kubectl get pods -o wide` instruction by parsing the output.
-// func GetPodIP(podName string) (string, error) {
-// 	cmd := exec.Command("kubectl", "get", "pods", "-o", "wide")
-
-// 	output, err := cmd.CombinedOutput()
-// 	if err != nil {
-// 		return "", fmt.Errorf("Executing kubectl get pods failed: %v\n", err)
-// 	}
-
-// 	lines := strings.Split(string(output), "\n")[1:]
-// 	for _, line := range lines {
-// 		blocks := strings.Split(line, " ")
-// 		newBlocks := []string{}
-// 		for _, block := range blocks {
-// 			if block != "" {
-// 				newBlocks = append(newBlocks, block)
-// 			}
-// 		}
-// 		if newBlocks[0] == podName && newBlocks[5] != "<none>" {
-// 			return newBlocks[5], nil
-// 		}
-// 	}
-
-// 	return "", fmt.Errorf("Can't find pod: %s\n", podName)
-// }

@@ -13,7 +13,9 @@ const (
 	HIGHORBIT = 2
 	GROUNDSTATION = 3
 	MISSILE = 4
-	ENEMY = 5
+	FIXED = 5
+
+	NAME_PREFIX_V2 = "sdn"
 )
 
 type NodeType int
@@ -43,11 +45,11 @@ func NewSatNode(nodeType NodeType, params map[string]interface{}) Node {
 	return Node{
 		Type: nodeType,
 		UUID: params["uuid"].(string),
-		TrackID: params["trackID"].(int),
-		InTrackID: params["inTrackID"].(int),
+		TrackID: (int) (params["trackID"].(float64)),
+		InTrackID: (int) (params["inTrackID"].(float64)),
 		Latitude: params["lat"].(float64),
-		Longitude: params["long"].(float64),
-		Altitude: params["alt"].(float64),
+		Longitude: params["lon"].(float64),
+		Altitude: params["height"].(float64),
 	}
 }
 
@@ -56,8 +58,8 @@ func NewOtherNode(nodeType NodeType, params map[string]interface{}) Node {
 		Type: nodeType,
 		UUID: params["uuid"].(string),
 		Latitude: params["lat"].(float64),
-		Longitude: params["long"].(float64),
-		Altitude: params["alt"].(float64),
+		Longitude: params["lon"].(float64),
+		Altitude: params["height"].(float64),
 	}
 }
 
@@ -74,8 +76,8 @@ func (n *Node) Position() (x, y, z float64) {
 
 	// Construct params for conversion
 	obsCoords := gosate.LatLong{
-		Latitude: n.Latitude,
-		Longitude: n.Longitude,
+		Latitude: n.Latitude * math.Pi / 180.0,
+		Longitude: n.Longitude * math.Pi / 180.0,
 	}
 	alt := n.Altitude
 	jday := gosate.JDay(
@@ -98,8 +100,8 @@ func (n *Node) PositionAtTime(t time.Time) (x, y, z float64) {
 	
 	// Construct params for conversion
 	obsCoords := gosate.LatLong{
-		Latitude: n.Latitude,
-		Longitude: n.Longitude,
+		Latitude: n.Latitude * math.Pi / 180.0,
+		Longitude: n.Longitude * math.Pi / 180.0,
 	}
 	alt := n.Altitude
 	jday := gosate.JDay(

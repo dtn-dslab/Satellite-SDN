@@ -8,6 +8,8 @@ import (
 	gosate "github.com/joshuaferrara/go-satellite"
 )
 
+const NAME_PREFIX_V1 = "sdn"
+
 type Satellite struct {
 	Name      string
 	Satellite gosate.Satellite

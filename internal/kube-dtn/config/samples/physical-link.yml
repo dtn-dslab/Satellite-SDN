@@ -1,0 +1,12 @@
+# Link to add to pod topology
+link:
+  # Must be unique since it is used as VXLAN VNI
+  uid: 100
+  # IP of physical host
+  peer_pod: physical/10.0.0.55
+  local_intf: veth1
+  peer_intf: veth1
+  local_ip: 34.34.34.3/24
+  peer_ip: 34.34.34.4/24
+# Node IP where the pod is
+remote_ip: 10.0.0.232

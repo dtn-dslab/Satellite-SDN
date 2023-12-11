@@ -8,6 +8,7 @@ import (
 	"ws/dtn-satellite-sdn/sdn/util"
 
 	satv1 "ws/dtn-satellite-sdn/sdn/type/v1"
+
 	topov1 "github.com/y-young/kube-dtn/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -19,12 +20,12 @@ type LinkEdge struct {
 	To   int
 }
 
-func LinkSyncLoop(nameMap map[int]string, edgeSet []LinkEdge) error {
+func LinkSyncLoop(nameMap map[int]string, edgeSet []LinkEdge, isFirstTime bool) error {
 	// Initialize topologyList
 	topoList := topov1.TopologyList{}
-	podIntfMap := make([]int, len(nameMap))
+	// podIntfMap := make([]int, len(nameMap))
 	for idx := 0; idx < len(nameMap); idx++ {
-		podIntfMap[idx] = 1
+		// podIntfMap[idx] = 1
 		topoList.Items = append(topoList.Items, topov1.Topology{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: nameMap[idx],
@@ -39,8 +40,8 @@ func LinkSyncLoop(nameMap map[int]string, edgeSet []LinkEdge) error {
 			topov1.Link{
 				UID:       (edge.From << 12) + edge.To,
 				PeerPod:   nameMap[edge.To],
-				LocalIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.From]),
-				PeerIntf:  fmt.Sprintf("sdneth%d", podIntfMap[edge.To]),
+				LocalIntf: util.GetLinkName(nameMap[edge.To]),
+				PeerIntf:  util.GetLinkName(nameMap[edge.From]),
 				LocalIP:   util.GetVxlanIP(uint(edge.From), uint(edge.To)),
 				PeerIP:    util.GetVxlanIP(uint(edge.To), uint(edge.From)),
 			},
@@ -50,14 +51,14 @@ func LinkSyncLoop(nameMap map[int]string, edgeSet []LinkEdge) error {
 			topov1.Link{
 				UID:       (edge.From << 12) + edge.To,
 				PeerPod:   nameMap[edge.From],
-				LocalIntf: fmt.Sprintf("sdneth%d", podIntfMap[edge.To]),
-				PeerIntf:  fmt.Sprintf("sdneth%d", podIntfMap[edge.From]),
+				LocalIntf: util.GetLinkName(nameMap[edge.From]),
+				PeerIntf:  util.GetLinkName(nameMap[edge.To]),
 				LocalIP:   util.GetVxlanIP(uint(edge.To), uint(edge.From)),
 				PeerIP:    util.GetVxlanIP(uint(edge.From), uint(edge.To)),
 			},
 		)
-		podIntfMap[edge.From]++
-		podIntfMap[edge.To]++
+		// podIntfMap[edge.From]++
+		// podIntfMap[edge.To]++
 	}
 
 	// Get current namespace
@@ -71,14 +72,41 @@ func LinkSyncLoop(nameMap map[int]string, edgeSet []LinkEdge) error {
 	if err != nil {
 		return fmt.Errorf("CONFIG ERROR: %v", err)
 	}
-	for _, topo := range topoList.Items {
-		if err := restClient.Post().
+	if isFirstTime {
+		for _, topo := range topoList.Items {
+			if err := restClient.Post().
+				Namespace(namespace).
+				Resource("topologies").
+				Body(&topo).
+				Do(context.TODO()).
+				Into(nil); err != nil {
+				return fmt.Errorf("apply topology error: %v", err)
+			}
+		}
+	} else {
+		resourceVersionMap := map[string]string{}
+		topoVersionList := topov1.TopologyList{}
+		if err := restClient.Get().
 			Namespace(namespace).
 			Resource("topologies").
-			Body(&topo).
 			Do(context.TODO()).
-			Into(nil); err != nil {
-			return fmt.Errorf("APPLY TOPOLOGY FAILURE: %v", err)
+			Into(&topoVersionList); err != nil {
+			return fmt.Errorf("get topologylist error: %v", err)
+		}
+		for _, topo := range topoVersionList.Items {
+			resourceVersionMap[topo.Name] = topo.ResourceVersion
+		}
+		for _, topo := range topoList.Items {
+			topo.ResourceVersion = resourceVersionMap[topo.Name]
+			if err := restClient.Put().
+				Namespace(namespace).
+				Resource("topologies").
+				Name(topo.Name).
+				Body(&topo).
+				Do(context.TODO()).
+				Into(nil); err != nil {
+				return fmt.Errorf("update topology error: %v", err)
+			}
 		}
 	}
 	return nil
@@ -221,6 +249,13 @@ func GenerateConnGraph(c *satv1.Constellation) ([][]int) {
 		if lowerMinIdx != -1 {
 			connGraph[idx1][lowerMinIdx] = 1
 			connGraph[lowerMinIdx][idx1] = 1
+		}
+	}
+
+	// Assert symmetry in connGraph
+	for idx1 := 0; idx1 < nodeCount; idx1++ {
+		for idx2 := idx1 + 1; idx2 < nodeCount; idx2++ {
+			connGraph[idx2][idx1] = connGraph[idx1][idx2]
 		}
 	}
 
