@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kubedtn
+images:
+- name: y-young/kubedtn
+  newTag: latest
+resources:
+- namespace.yaml
+- serviceaccount.yaml
+- rbac.yaml
+- daemonset.yaml
+- prometheus.yaml
+- ../crd

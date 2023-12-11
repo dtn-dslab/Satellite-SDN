@@ -80,8 +80,8 @@ func PodSyncLoop(nameMap map[int]string) error {
 						},
 						Args: []string{
 							fmt.Sprintf(
-								"export PODNAME=%s;" +
-								"./start.sh %s %d", 
+								"export PODNAME=%s;"+
+									"./start.sh %s %d",
 								sat_name, util.GetGlobalIP(uint(idx)), idx+5000,
 							),
 						},
