@@ -88,4 +88,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/y-young/kube-dtn v0.0.0 => ../kube-dtn
+replace github.com/y-young/kube-dtn => github.com/dtn-dslab/kube-dtn v0.0.0-20230518090357-90fc51ae6b9d

@@ -125,6 +125,8 @@ func (r *RouteReconciler) AddSubpaths(ctx context.Context, podIP string, subpath
 		log.Info("Post Error", "PostURL", postURL, "Error", err)
 	} else if resp != nil && resp.StatusCode != http.StatusOK {
 		log.Info("Add subpaths failed", "StatusCode", resp.StatusCode, "PostURL", postURL)
+		log.Info("Retry to add subpaths...")
+		r.AddSubpaths(ctx, podIP, subpaths)
 	}
 
 	return err
@@ -150,6 +152,8 @@ func (r *RouteReconciler) DelSubpaths(ctx context.Context, podIP string, subpath
 		log.Info("Post Error", "PostURL", postURL, "Error", err)
 	} else if resp != nil && resp.StatusCode != http.StatusOK {
 		log.Info("Delete subpaths failed", "StatusCode", resp.StatusCode, "PostURL", postURL)
+		log.Info("Retry to delete subpaths...")
+		r.DelSubpaths(ctx, podIP, subpaths)
 	}
 
 	return err
@@ -175,6 +179,8 @@ func (r *RouteReconciler) UpdateSubpaths(ctx context.Context, podIP string, subp
 		log.Info("Post Error", "PostURL", postURL, "Error", err)
 	} else if resp != nil && resp.StatusCode != http.StatusOK {
 		log.Info("Update subpaths failed", "StatusCode", resp.StatusCode, "PostURL", postURL)
+		log.Info("Retry to update subpaths...")
+		r.UpdateSubpaths(ctx, podIP, subpaths)
 	}
 
 	return err
