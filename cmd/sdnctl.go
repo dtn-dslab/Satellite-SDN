@@ -1,9 +1,9 @@
 package main
 
 import (
-  "ws/dtn-satellite-sdn/cmd/app"
+	"ws/dtn-satellite-sdn/cmd/app"
 )
 
 func main() {
-  cmd.Execute()
+	cmd.Execute()
 }

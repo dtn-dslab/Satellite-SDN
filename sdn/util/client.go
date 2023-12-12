@@ -12,15 +12,15 @@ import (
 	"k8s.io/client-go/util/flowcontrol"
 	"k8s.io/client-go/util/homedir"
 
-	sdnv1 "ws/dtn-satellite-sdn/api/v1"
 	topov1 "github.com/y-young/kube-dtn/api/v1"
+	sdnv1 "ws/dtn-satellite-sdn/api/v1"
 )
 
 var (
-	kubeconfig *string = nil
-	clientset *kubernetes.Clientset = nil
-	routeclient *rest.RESTClient = nil
-	topoclient *rest.RESTClient = nil
+	kubeconfig  *string               = nil
+	clientset   *kubernetes.Clientset = nil
+	routeclient *rest.RESTClient      = nil
+	topoclient  *rest.RESTClient      = nil
 )
 
 func init() {
@@ -100,7 +100,7 @@ func GetTopoClient() (*rest.RESTClient, error) {
 			kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 		}
 	}
-	
+
 	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
@@ -116,4 +116,3 @@ func GetTopoClient() (*rest.RESTClient, error) {
 	topoclient, err := rest.RESTClientFor(config)
 	return topoclient, err
 }
-

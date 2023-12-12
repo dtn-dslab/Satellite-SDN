@@ -28,7 +28,7 @@ func RunSatelliteSDN(inputFilePath string, expectedNodeNum int, timeout int) err
 	if timeout < 0 {
 		return nil
 	}
-	for ;; time.Sleep(time.Duration(timeout) * time.Second) {
+	for ; ; time.Sleep(time.Duration(timeout) * time.Second) {
 		nameMap, edgeSet, routeTable, err := GenerateSatelliteConfig(inputFilePath)
 		if err != nil {
 			return fmt.Errorf("Generate satellite config error: %v\n", err)
@@ -143,4 +143,3 @@ func DelSDN(nameMap map[int]string) error {
 
 	return nil
 }
-

@@ -6,27 +6,25 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-const (
-	RedisHostName = "master1.dtn.lab"
-	RedisServerPort = ":6379"
-	PWD = "sail123456"
-	DB_SELECTED = 0
-)
-
 type RedisClient struct {
 	c *redis.Client
 }
 
+var rdb *RedisClient
+
 func NewRedisClient() *RedisClient {
-	return &RedisClient{
-		c: redis.NewClient(
-			&redis.Options{
-				Addr: RedisHostName + RedisServerPort,
-				Password: PWD,
-				DB: DB_SELECTED,
-			},
-		),
+	if rdb == nil {
+		rdb = &RedisClient{
+			c: redis.NewClient(
+				&redis.Options{
+					Addr:     RedisHostName + RedisServerPort,
+					Password: PWD,
+					DB:       DB_SELECTED,
+				},
+			),
+		}
 	}
+	return rdb
 }
 
 func (client *RedisClient) Put(key string, val any) error {

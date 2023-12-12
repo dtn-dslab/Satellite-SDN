@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 	"sync"
+	"time"
 	satv2 "ws/dtn-satellite-sdn/sdn/type/v2"
 	"ws/dtn-satellite-sdn/sdn/util"
 
@@ -40,11 +40,11 @@ func GetTopoInGroup(group *satv2.Group) map[string][]string {
 	result := map[string][]string{}
 	for i := 0; i < group.Len(); i++ {
 		result[group.Nodes[i].UUID] = append(
-			result[group.Nodes[i].UUID], 
-			group.Nodes[(i + 1) % group.Len()].UUID,
+			result[group.Nodes[i].UUID],
+			group.Nodes[(i+1)%group.Len()].UUID,
 		)
-		result[group.Nodes[(i + 1) % group.Len()].UUID] = append(
-			result[group.Nodes[(i + 1) % group.Len()].UUID], 
+		result[group.Nodes[(i+1)%group.Len()].UUID] = append(
+			result[group.Nodes[(i+1)%group.Len()].UUID],
 			group.Nodes[i].UUID,
 		)
 	}
@@ -67,7 +67,7 @@ func GetTopoAmongLowOrbitGroup(
 	for _, node := range curGroup.Nodes {
 		curNodeIdxs = append(curNodeIdxs, uuidIndexMap[node.UUID])
 	}
-	
+
 	// Get 2 nearest satellites for each satellite in current groups
 	for _, node := range curGroup.Nodes {
 		nodeIdx := uuidIndexMap[node.UUID]
@@ -77,12 +77,14 @@ func GetTopoAmongLowOrbitGroup(
 			// If otherNodeIdx is in curNodeIdxs, continue
 			flag := false
 			for _, index := range curNodeIdxs {
-				if otherNodeIdx == index { 
+				if otherNodeIdx == index {
 					flag = true
 					break
 				}
 			}
-			if flag { continue }
+			if flag {
+				continue
+			}
 			// Update min_distance & min_idx
 			if distanceMap[nodeIdx][otherNodeIdx] < minDistance {
 				minDistance = distanceMap[nodeIdx][otherNodeIdx]
@@ -100,7 +102,9 @@ func GetTopoAmongLowOrbitGroup(
 					break
 				}
 			}
-			if flag { continue }
+			if flag {
+				continue
+			}
 			// Update second_min_distance & second_min_idx
 			if distanceMap[nodeIdx][otherNodeIdx] < secondMinDistance {
 				secondMinDistance = distanceMap[nodeIdx][otherNodeIdx]
@@ -146,7 +150,7 @@ func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int, isFirstTi
 			},
 		)
 		topoList.Items[edgeTo].Spec.Links = append(
-			topoList.Items[edgeTo].Spec.Links, 
+			topoList.Items[edgeTo].Spec.Links,
 			topov1.Link{
 				UID:       (edgeFrom << 12) + edgeTo,
 				PeerPod:   indexUUIDMap[edgeFrom],
@@ -174,7 +178,7 @@ func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int, isFirstTi
 		wg := new(sync.WaitGroup)
 		wg.Add(util.ThreadNums)
 		for threadId := 0; threadId < util.ThreadNums; threadId++ {
-			go func(id int){
+			go func(id int) {
 				for topoId := id; topoId < len(topoList.Items); topoId += util.ThreadNums {
 					topo := topoList.Items[topoId]
 					if err := restClient.Post().
@@ -207,7 +211,7 @@ func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int, isFirstTi
 		wg := new(sync.WaitGroup)
 		wg.Add(util.ThreadNums)
 		for threadId := 0; threadId < util.ThreadNums; threadId++ {
-			go func(id int){
+			go func(id int) {
 				for topoId := id; topoId < len(topoList.Items); topoId += util.ThreadNums {
 					topo := topoList.Items[topoId]
 					topo.ResourceVersion = resourceVersionMap[topo.Name]
@@ -226,6 +230,6 @@ func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int, isFirstTi
 		}
 		wg.Wait()
 	}
-	
+
 	return nil
 }

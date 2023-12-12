@@ -7,14 +7,13 @@ import (
 
 	"ws/dtn-satellite-sdn/sdn"
 )
-  
 
 var (
-	url string
-	node int
+	url      string
+	node     int
 	interval int
-	is_test bool
-	version string
+	is_test  bool
+	version  string
 
 	initCmd = &cobra.Command{
 		Use:   "init",
@@ -37,7 +36,7 @@ var (
 					}
 				}
 			}
-			
+
 			return nil
 		},
 	}

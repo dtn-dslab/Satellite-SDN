@@ -20,7 +20,7 @@ type ClientInterface interface {
 	GetRouteFromAndTo(uuid1, uuid2 string) ([]string, error)
 	GetRouteHops(uuid, uuidList string) (string, error)
 	GetDistance(uuid1, uuid2 string) (float64, error)
-	CheckConnectionHandler(w http.ResponseWriter, r *http.Request) 
+	CheckConnectionHandler(w http.ResponseWriter, r *http.Request)
 	GetTopoInAscArrayHandler(w http.ResponseWriter, r *http.Request)
 	GetRouteFromAndToHandler(w http.ResponseWriter, r *http.Request)
 	GetRouteHopsHandler(w http.ResponseWriter, r *http.Request)
@@ -56,10 +56,10 @@ func NewSDNClient(url string) *SDNClient {
 	}
 	orbit := NewOrbitInfo(params)
 	return &SDNClient{
-		OrbitClient: orbit,
+		OrbitClient:   orbit,
 		NetworkClient: NewNetwork(orbit),
-		PositionURL: url,
-		RWLock: new(sync.RWMutex),
+		PositionURL:   url,
+		RWLock:        new(sync.RWMutex),
 	}
 }
 
@@ -130,7 +130,7 @@ func (client *SDNClient) GetTopoInAscArray() ([][]string, error) {
 // Description: Http handler wrapper for func GetTopoInAscArray
 func (client *SDNClient) GetTopoInAscArrayHandler(w http.ResponseWriter, r *http.Request) {
 	topoArr, _ := client.GetTopoInAscArray()
-	result := map[string]interface{} {
+	result := map[string]interface{}{
 		"result": topoArr,
 	}
 	content, _ := json.Marshal(&result)
@@ -169,8 +169,8 @@ func (client *SDNClient) GetRouteFromAndToHandler(w http.ResponseWriter, r *http
 	if routeHops, err := client.GetRouteFromAndTo(uuid1, uuid2); err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte(err.Error()))
-	} else{
-		result := map[string]interface{} {
+	} else {
+		result := map[string]interface{}{
 			"result": routeHops,
 		}
 		content, _ := json.Marshal(result)
@@ -201,7 +201,7 @@ func (client *SDNClient) GetRouteHops(uuid, uuidList string) (string, error) {
 			result += fmt.Sprint(len(idxList)) + ","
 		}
 	}
-	result = result[:len(result) - 1]	// Trim the last ','
+	result = result[:len(result)-1] // Trim the last ','
 	return result, nil
 }
 
@@ -214,7 +214,7 @@ func (client *SDNClient) GetRouteHopsHandler(w http.ResponseWriter, r *http.Requ
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte(err.Error()))
 	} else {
-		result := map[string]interface{} {
+		result := map[string]interface{}{
 			"result": routeHops,
 		}
 		content, _ := json.Marshal(result)
@@ -249,7 +249,7 @@ func (client *SDNClient) GetDistanceHanlder(w http.ResponseWriter, r *http.Reque
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte(err.Error()))
 	} else {
-		result := map[string]interface{} {
+		result := map[string]interface{}{
 			"result": distance,
 		}
 		content, _ := json.Marshal(result)
@@ -283,8 +283,7 @@ func (client *SDNClient) ApplyPod(nodeNum int) error {
 	}
 	podMeta := pod.PodMetadata{
 		IndexUUIDMap: client.OrbitClient.GetIndexUUIDMap(),
-		StationIdxMin: 
-			client.OrbitClient.Metadata.LowOrbitNum + 
+		StationIdxMin: client.OrbitClient.Metadata.LowOrbitNum +
 			client.OrbitClient.Metadata.HighOrbitNum,
 		StationNum: client.OrbitClient.Metadata.GroundStationNum,
 	}
@@ -326,6 +325,3 @@ func (client *SDNClient) UpdateRoute() error {
 	log.Println("Updating route...")
 	return route.RouteSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.RouteGraph, false)
 }
-
-
-

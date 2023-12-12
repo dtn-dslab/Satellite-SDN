@@ -17,7 +17,7 @@ func GetNamespace() (string, error) {
 		"/bin/sh",
 		"-c",
 		fmt.Sprintf(
-			"cat %s | grep namespace | tr -d ' ' | sed 's/namespace://g' | tr -d '\n'", 
+			"cat %s | grep namespace | tr -d ' ' | sed 's/namespace://g' | tr -d '\n'",
 			filepath.Join(homedir.HomeDir(), ".kube", "config"),
 		),
 	)
@@ -70,4 +70,3 @@ func GetLinkName(name string) string {
 	}
 	return name
 }
-

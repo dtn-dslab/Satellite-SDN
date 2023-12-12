@@ -6,8 +6,8 @@ import (
 
 	"ws/dtn-satellite-sdn/sdn/link"
 	"ws/dtn-satellite-sdn/sdn/route"
-	"ws/dtn-satellite-sdn/sdn/util"
 	satv2 "ws/dtn-satellite-sdn/sdn/type/v2"
+	"ws/dtn-satellite-sdn/sdn/util"
 )
 
 type NetworkInterface interface {
@@ -45,9 +45,9 @@ func NewNetwork(info *OrbitInfo) *Network {
 func (n *Network) UpdateNetwork(info *OrbitInfo) {
 	// 1. Init some variables
 	n.Metadata = info.Metadata
-	totalNodesNum := 
-		n.Metadata.LowOrbitNum + n.Metadata.HighOrbitNum + 
-		n.Metadata.GroundStationNum + n.Metadata.MissileNum
+	totalNodesNum :=
+		n.Metadata.LowOrbitNum + n.Metadata.HighOrbitNum +
+			n.Metadata.GroundStationNum + n.Metadata.MissileNum
 	// totalGroupsNum := len(info.LowOrbitSats) + len(info.HighOrbitSats) + 2
 	n.DistanceMap = make([][]float64, totalNodesNum)
 	n.TopoGraph = make([][]bool, totalNodesNum)
@@ -77,7 +77,7 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 	// 3. Compute low-orbit topology
 	wg.Add(util.ThreadNums)
 	lowOrbitGroupNum := len(info.LowOrbitSats)
-	lowOrbitGroupKeys := make([]int, 0, lowOrbitGroupNum)	// Store trackID in LowOrbitSats
+	lowOrbitGroupKeys := make([]int, 0, lowOrbitGroupNum) // Store trackID in LowOrbitSats
 	for key, _ := range info.LowOrbitSats {
 		lowOrbitGroupKeys = append(lowOrbitGroupKeys, key)
 	}
@@ -88,7 +88,7 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 				curTrackID := lowOrbitGroupKeys[trackIDIdx]
 				sameOrbitTopoMap := link.GetTopoInGroup(info.LowOrbitSats[curTrackID])
 				diffOrbitTopoMap := link.GetTopoAmongLowOrbitGroup(
-					info.LowOrbitSats[curTrackID],  n.Metadata.LowOrbitNum, n.DistanceMap,
+					info.LowOrbitSats[curTrackID], n.Metadata.LowOrbitNum, n.DistanceMap,
 					n.Metadata.IndexUUIDMap, n.Metadata.UUIDIndexMap,
 				)
 				// Apply result to TopoGraph
@@ -189,7 +189,7 @@ func (n *Network) GetTopoInAscArray() [][]int {
 
 func (n *Network) GetRouteFromAndTo(idx1, idx2 int) []int {
 	result := []int{idx1}
-	for ; idx1 != idx2; {
+	for idx1 != idx2 {
 		idx1 = n.RouteGraph[idx1][idx2]
 		result = append(result, idx1)
 	}
@@ -208,4 +208,3 @@ func (n *Network) GetRouteHops(idx int, idxList []int) []int {
 func (n *Network) GetDistance(idx1, idx2 int) float64 {
 	return n.DistanceMap[idx1][idx2]
 }
-

@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	sdnv1 "ws/dtn-satellite-sdn/api/v1"
+	"ws/dtn-satellite-sdn/common"
 )
 
 // RouteReconciler reconciles a Route object
@@ -95,13 +96,17 @@ func (r *RouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
-	// Update route object in k8s cluster
+	// Update route object in k8s cluster & update resource version in redis
 	route.Status.SubPaths = route.Spec.DeepCopy().SubPaths
 	if err := r.Status().Update(ctx, &route); err != nil {
 		log.Error(err, "Failed to update status")
 		return ctrl.Result{}, err
+	} else {
+		client := common.NewRedisClient()
+		key := common.RouteKeyPrefix + common.VersionPrefix + "/" + route.Name
+		client.Put(key, route.ResourceVersion)
 	}
-	
+
 	return ctrl.Result{}, nil
 }
 
@@ -236,4 +241,3 @@ func (r *RouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		}).
 		Complete(r)
 }
-
