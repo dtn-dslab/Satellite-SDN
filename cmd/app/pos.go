@@ -7,11 +7,11 @@ import (
 )
 
 var (
-	tle string
+	tle      string
 	fixedNum int
 
 	posCmd = &cobra.Command{
-		Use: "pos",
+		Use:   "pos",
 		Short: "Start position computing module.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			position.RunPositionModule(tle, fixedNum)

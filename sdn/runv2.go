@@ -43,11 +43,11 @@ func RunSDNServer(url string, expectedNodeNum int, timeout int) error {
 	}
 
 	// Bind http request with handler
-	sdnHandlerMap := map[string]HttpHandler {
+	sdnHandlerMap := map[string]HttpHandler{
 		"/getTopologyGraph": client.GetTopoInAscArrayHandler,
-		"/getRoute": client.GetRouteFromAndToHandler,
-		"/getConnection": client.GetRouteHopsHandler,
-		"/getDistance": client.GetDistanceHanlder,
+		"/getRoute":         client.GetRouteFromAndToHandler,
+		"/getConnection":    client.GetRouteHopsHandler,
+		"/getDistance":      client.GetDistanceHanlder,
 	}
 	for url, handler := range sdnHandlerMap {
 		http.HandleFunc(url, handler)
@@ -74,11 +74,11 @@ func RunSDNServerTest(url string, expectedNodeNum int, timeout int) error {
 	}
 
 	// Bind http request with handler
-	sdnHandlerMap := map[string]HttpHandler {
+	sdnHandlerMap := map[string]HttpHandler{
 		"/getTopologyGraph": client.GetTopoInAscArrayHandler,
-		"/getRoute": client.GetRouteFromAndToHandler,
-		"/getConnection": client.GetRouteHopsHandler,
-		"/getDistance": client.GetDistanceHanlder,
+		"/getRoute":         client.GetRouteFromAndToHandler,
+		"/getConnection":    client.GetRouteHopsHandler,
+		"/getDistance":      client.GetDistanceHanlder,
 	}
 	for url, handler := range sdnHandlerMap {
 		http.HandleFunc(url, handler)

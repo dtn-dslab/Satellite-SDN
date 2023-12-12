@@ -5,7 +5,7 @@ import (
 )
 
 func TestGeneratePodYaml(t *testing.T) {
-	nameMap := map[int]string {
+	nameMap := map[int]string{
 		0: "first",
 		1: "second",
 	}

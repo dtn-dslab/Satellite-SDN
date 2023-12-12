@@ -1,76 +1,67 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os/exec"
+	"path/filepath"
 	"strings"
-	"time"
 
-	topov1 "github.com/y-young/kube-dtn/api/v1"
+	"k8s.io/client-go/util/homedir"
 )
 
-const (
-	DEBUG = false
-	POD_IMAGE_NAME = "electronicwaste/podserver"
-	POD_IMAGE_TAG = "v23"
-	ThreadNums = 64
-)
-
-var NodeCapacity = map[string]int {
-	"node1.dtn.lab": 1,
-	"node2.dtn.lab": 1,
-	"node4.dtn.lab": 3,
-	"node5.dtn.lab": 3,
-	"node6.dtn.lab": 3,
-	"node7.dtn.lab": 1,
-	"node12.dtn.lab": 4,
-	"node13.dtn.lab": 4,
-}
-
-func InitEnvTimeCounter(startTimer time.Time) (float64, error) {
-	for ;!isPodOk() || !isTopoOk() || !isRouteOk(); {
-		time.Sleep(3 * time.Second)
-	}
-
-	endTimer := time.Now()
-	return endTimer.Sub(startTimer).Seconds(), nil
-}
-
-func isPodOk() bool {
-	// Executing 'kubectl get pod <podName> -o wide'
-	cmd := exec.Command("bash", "-c", "kubectl get pod -o wide | grep -v Running")
+func GetNamespace() (string, error) {
+	cmd := exec.Command(
+		"/bin/sh",
+		"-c",
+		fmt.Sprintf(
+			"cat %s | grep namespace | tr -d ' ' | sed 's/namespace://g' | tr -d '\n'",
+			filepath.Join(homedir.HomeDir(), ".kube", "config"),
+		),
+	)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return false
+		return "", fmt.Errorf("EXEC COMMAND FAILURE: %v", err)
 	}
-	
-	// Parse file content to []string & Judge if all pods have been created
-	lines := strings.Split(string(output), "\n")
-	if len(lines) > 0 && lines[len(lines) - 1] == "" {
-		lines = lines[:len(lines) - 1]
-	}
-	if len(lines) > 1 {
-		return false
-	}
-	return true
+
+	namespace := strings.Trim(string(output), "\"")
+	return namespace, nil
 }
 
-// TODO(ws): Judge topology's state
-func isTopoOk() bool {
-	return true
-}
-
-// TODO(ws): Judge route's state
-func isRouteOk() bool {
-	return true
-}
-
-func ShowTopology(topology *topov1.Topology) {
-	fmt.Printf("%s ->", topology.Name)
-	for _, topo := range topology.Spec.Links {
-		fmt.Printf(" %s", topo.PeerPod)
+func GetSlaveNodes(nodeNum int) ([]string, error) {
+	// Execute `kubectl get nodes | grep none` to get slave nodes
+	cmd := exec.Command("/bin/sh", "-c", "kubectl get nodes | grep none")
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return nil, fmt.Errorf("get nodes failed: %v", err)
+	} else {
+		result := []string{}
+		lines := strings.Split(string(output), "\n")
+		for idx := 0; idx < len(lines) && idx < nodeNum; idx++ {
+			line := lines[idx]
+			name, _, _ := strings.Cut(line, " ")
+			result = append(result, name)
+		}
+		return result, nil
 	}
-	fmt.Print("\n")
+}
+
+func Fetch(url string) (map[string]interface{}, error) {
+	resp, err := http.Get(url)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("fetch %s error! StatusCode: %d, Details: %v", url, resp.StatusCode, err)
+	}
+	content, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response body error: %v", err)
+	}
+	var result map[string]interface{}
+	if err := json.Unmarshal(content, &result); err != nil {
+		return nil, fmt.Errorf("unmarshal failed: %v", err)
+	} else {
+		return result, nil
+	}
 }
 
 func GetLinkName(name string) string {

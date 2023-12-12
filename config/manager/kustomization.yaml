@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: electronicwaste/sdn-manager
-  newTag: v9
+  newTag: v12

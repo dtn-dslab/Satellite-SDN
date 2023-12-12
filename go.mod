@@ -14,6 +14,8 @@ require (
 	sigs.k8s.io/controller-runtime v0.13.0
 )
 
+require github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
+
 require (
 	cloud.google.com/go/compute v1.19.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
@@ -36,6 +38,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.14 // indirect
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.2.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -88,4 +91,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/y-young/kube-dtn v0.0.0 => ../kube-dtn
+replace github.com/y-young/kube-dtn => github.com/dtn-dslab/kube-dtn v0.0.0-20230518090357-90fc51ae6b9d

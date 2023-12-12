@@ -9,22 +9,22 @@ type GroupInterface interface {
 }
 
 type Group struct {
-	Type GroupType 
-	TrackID int 
-	Nodes []Node 
+	Type    GroupType
+	TrackID int
+	Nodes   []Node
 }
 
 func NewSatGroup(groupType GroupType, trackID int) *Group {
 	return &Group{
-		Type: groupType,
+		Type:    groupType,
 		TrackID: trackID,
-		Nodes: make([]Node, 0),
+		Nodes:   make([]Node, 0),
 	}
 }
 
 func NewOtherGroup(groupType GroupType) *Group {
 	return &Group{
-		Type: groupType,
+		Type:  groupType,
 		Nodes: make([]Node, 0),
 	}
 }

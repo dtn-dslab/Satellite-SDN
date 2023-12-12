@@ -20,7 +20,7 @@ func TestDelSDN(t *testing.T) {
 
 func TestSlice(t *testing.T) {
 	slice := []int{1, 2, 3, 4, 5}
-	newSlice := append(slice[:2], slice..., )
+	newSlice := append(slice[:2], slice...)
 	t.Log(slice)
 	t.Log(newSlice)
 }

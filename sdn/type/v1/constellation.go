@@ -84,5 +84,3 @@ func (c *Constellation) GetNameMap() map[int]string {
 	}
 	return nameMap
 }
-
-

@@ -28,7 +28,7 @@ func RunSatelliteSDN(inputFilePath string, expectedNodeNum int, timeout int) err
 	if timeout < 0 {
 		return nil
 	}
-	for ;; time.Sleep(time.Duration(timeout) * time.Second) {
+	for ; ; time.Sleep(time.Duration(timeout) * time.Second) {
 		nameMap, edgeSet, routeTable, err := GenerateSatelliteConfig(inputFilePath)
 		if err != nil {
 			return fmt.Errorf("Generate satellite config error: %v\n", err)
@@ -91,16 +91,12 @@ func CreateSDN(nameMap map[int]string, edgeSet []link.LinkEdge, routeTable [][]i
 		return fmt.Errorf("Pod sync failed: %v\n", err)
 	}
 
-	endInitTime := time.Now()
-
 	// Invoke route's sync loop
 	log.Println("Route Sync...")
 	err = route.RouteSyncLoop(nameMap, routeTable, true)
 	if err != nil {
 		return fmt.Errorf("Route sync failed: %v\n", err)
 	}
-	endApplyRouteTime := time.Now()
-	log.Printf("Apply route time %vs", endApplyRouteTime.Sub(endInitTime).Seconds())
 
 	return nil
 }
@@ -147,4 +143,3 @@ func DelSDN(nameMap map[int]string) error {
 
 	return nil
 }
-
