@@ -16,7 +16,7 @@ type OrbitInterface interface {
 
 type OrbitMeta struct {
 	// TimeStamp is the last time this orbitInfo was updated
-	TimeStamp time.Time	
+	TimeStamp time.Time
 
 	// IndexUUIDMap stores index->UUID map
 	IndexUUIDMap map[int]string
@@ -45,23 +45,23 @@ type OrbitInfo struct {
 	Metadata *OrbitMeta
 
 	// LowOrbitSats stores groups of satellite nodes in low orbit
-	LowOrbitSats map[int]*satv2.Group 
+	LowOrbitSats map[int]*satv2.Group
 
 	// HighOrbitSats stores groups of satellite nodes in high orbit
-	HighOrbitSats map[int]*satv2.Group	
+	HighOrbitSats map[int]*satv2.Group
 
 	// GroundStations stores the group of ground station nodes
-	GroundStations *satv2.Group	
+	GroundStations *satv2.Group
 
 	// Missiles stores the group of missile nodes
-	Missiles *satv2.Group 
+	Missiles *satv2.Group
 }
 
 // Function: ParseParamsQimeng
 // Description: Parsing params in http response for Qimeng
 // 1. param: Message from Qimeng
 func ParseParamsQimeng(params map[string]interface{}) (unixTimeStamp int64, satellites, stations, missiles []map[string]interface{}) {
-	unixTimeStamp = (int64) (params["unixTimeStamp"].(float64))
+	unixTimeStamp = (int64)(params["unixTimeStamp"].(float64))
 	if params["satellites"] != nil {
 		for _, intf := range params["satellites"].([]interface{}) {
 			satellites = append(satellites, intf.(map[string]interface{}))
@@ -85,18 +85,18 @@ func ParseParamsQimeng(params map[string]interface{}) (unixTimeStamp int64, sate
 // 1. params: Message from Qimeng
 func NewOrbitInfo(params map[string]interface{}) *OrbitInfo {
 	unixTimeStamp, satellites, stations, missiles := ParseParamsQimeng(params)
-	info := OrbitInfo {
-		LowOrbitSats: make(map[int]*satv2.Group),
-		HighOrbitSats: make(map[int]*satv2.Group),
+	info := OrbitInfo{
+		LowOrbitSats:   make(map[int]*satv2.Group),
+		HighOrbitSats:  make(map[int]*satv2.Group),
 		GroundStations: satv2.NewOtherGroup(satv2.GROUNDSTATION),
-		Missiles: satv2.NewOtherGroup(satv2.MISSILE),
-		Metadata: &OrbitMeta{},
+		Missiles:       satv2.NewOtherGroup(satv2.MISSILE),
+		Metadata:       &OrbitMeta{},
 	}
 	// Initialize low-orbit and high-orbit satellite groups
 	for _, sat := range satellites {
 		node := satv2.NewSatNode(satv2.LOWORBIT, sat)
 		// Classify satellites by altitude 30000km
-		if (node.Altitude < 30000) {
+		if node.Altitude < 30000 {
 			trackID := node.TrackID
 			if _, ok := info.LowOrbitSats[trackID]; !ok {
 				info.LowOrbitSats[trackID] = satv2.NewSatGroup(satv2.LOWORBIT, trackID)
@@ -120,20 +120,20 @@ func NewOrbitInfo(params map[string]interface{}) *OrbitInfo {
 	// Initialzie station groups
 	for _, station := range stations {
 		info.GroundStations.Nodes = append(
-			info.GroundStations.Nodes, 
+			info.GroundStations.Nodes,
 			satv2.NewOtherNode(satv2.GROUNDSTATION, station),
 		)
 	}
 	// Initialize missile groups
 	for _, missile := range missiles {
 		info.Missiles.Nodes = append(
-			info.Missiles.Nodes, 
+			info.Missiles.Nodes,
 			satv2.NewOtherNode(satv2.MISSILE, missile),
 		)
 	}
 	// Update Metadata
 	info.Metadata = info.UpdateMeta(unixTimeStamp)
-	
+
 	return &info
 }
 
@@ -147,7 +147,7 @@ func (o *OrbitInfo) Update(params map[string]interface{}) {
 	for _, sat := range satellites {
 		node := satv2.NewSatNode(satv2.LOWORBIT, sat)
 		// Classify satellites by altitude 30000km
-		if (node.Altitude < 30000) {
+		if node.Altitude < 30000 {
 			uuidNodeMap[node.UUID] = node
 		} else {
 			node.Type = satv2.HIGHORBIT
@@ -193,14 +193,14 @@ func (o *OrbitInfo) Update(params map[string]interface{}) {
 func (o *OrbitInfo) UpdateMeta(unixTimeStamp int64) *OrbitMeta {
 	cur_idx := 0
 	meta := OrbitMeta{
-		TimeStamp: time.UnixMilli(unixTimeStamp),
-		IndexUUIDMap: make(map[int]string),
-		UUIDIndexMap: make(map[string]int),
-		UUIDNodeMap: make(map[string]*satv2.Node),
-		LowOrbitNum: 0,
-		HighOrbitNum: 0,
+		TimeStamp:        time.UnixMilli(unixTimeStamp),
+		IndexUUIDMap:     make(map[int]string),
+		UUIDIndexMap:     make(map[string]int),
+		UUIDNodeMap:      make(map[string]*satv2.Node),
+		LowOrbitNum:      0,
+		HighOrbitNum:     0,
 		GroundStationNum: 0,
-		MissileNum: 0,
+		MissileNum:       0,
 	}
 	// Since we do not modify bucket, we can get same result each time we iterate map.
 	for idx1, group := range o.LowOrbitSats {

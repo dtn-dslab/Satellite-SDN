@@ -47,7 +47,7 @@ func LinkSyncLoop(nameMap map[int]string, edgeSet []LinkEdge, isFirstTime bool) 
 			},
 		)
 		topoList.Items[edge.To].Spec.Links = append(
-			topoList.Items[edge.To].Spec.Links, 
+			topoList.Items[edge.To].Spec.Links,
 			topov1.Link{
 				UID:       (edge.From << 12) + edge.To,
 				PeerPod:   nameMap[edge.From],
@@ -197,7 +197,7 @@ func isConnection(c *satv1.Constellation, sat1, sat2 string) (bool, error) {
 }
 
 // Return and connGraph
-func GenerateConnGraph(c *satv1.Constellation) ([][]int) {
+func GenerateConnGraph(c *satv1.Constellation) [][]int {
 	// Initialize nameMap and connGraph
 	nodeCount := len(c.Satellites)
 	connGraph := [][]int{}

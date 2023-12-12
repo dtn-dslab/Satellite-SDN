@@ -2,8 +2,8 @@ package v1
 
 import (
 	"fmt"
-	"time"
 	"math"
+	"time"
 
 	gosate "github.com/joshuaferrara/go-satellite"
 )
@@ -113,7 +113,6 @@ func (sat *Satellite) LocationAtTime(year, month, day, hour, minute, second int)
 	return latlong.Longitude, latlong.Latitude, altitude
 }
 
-
 // Return the distance between two satellites in kilometer.
 func (sat *Satellite) Distance(anotherSat Satellite) float64 {
 	// now := time.Now()
@@ -184,9 +183,9 @@ func (sat *Satellite) AngleDelta(anotherSat Satellite) float64 {
 // Angle(sat2) - Angle(self) in WGS84's x-y plane
 // The return value ranges from -pi(does not contain) to pi
 func (sat *Satellite) AngleDeltaAtTime(anotherSat Satellite, year, month, day, hour, minute, second int) float64 {
-	angleDelta := 
-		anotherSat.AngleAtTime(year, month, day, hour, minute, second) - 
-		sat.AngleAtTime(year, month, day, hour, minute, second)
+	angleDelta :=
+		anotherSat.AngleAtTime(year, month, day, hour, minute, second) -
+			sat.AngleAtTime(year, month, day, hour, minute, second)
 	if angleDelta > math.Pi {
 		angleDelta = angleDelta - 2*math.Pi
 	} else if angleDelta <= -math.Pi {

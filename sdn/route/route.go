@@ -9,6 +9,7 @@ import (
 	"time"
 
 	sdnv1 "ws/dtn-satellite-sdn/api/v1"
+	"ws/dtn-satellite-sdn/common"
 	"ws/dtn-satellite-sdn/sdn/util"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,8 +39,7 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 		for {
 			if podList, err := clientset.CoreV1().
 				Pods(namespace).
-				List(context.TODO(), v1.ListOptions{}); 
-				err == nil {
+				List(context.TODO(), v1.ListOptions{}); err == nil {
 				isContinue := false
 				for _, pod := range podList.Items {
 					if pod.Status.PodIP != "" {
@@ -51,7 +51,7 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 				}
 				if isContinue {
 					log.Println("retry")
-					duration := 3000 + rand.Int31() % 2000
+					duration := 3000 + rand.Int31()%2000
 					time.Sleep(time.Duration(duration) * time.Millisecond)
 					continue
 				}
@@ -70,16 +70,21 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 
 	// Construct routes
 	routeList := sdnv1.RouteList{}
+	routeKeyList := []string{}
 	for idx1 := range routeTable {
 		route := sdnv1.Route{
 			Spec: sdnv1.RouteSpec{
-				PodIP: podIPTable[nameMap[idx1]],
+				PodIP:    podIPTable[nameMap[idx1]],
 				SubPaths: []sdnv1.SubPath{},
 			},
 		}
-		route.APIVersion  = "sdn.dtn-satellite-sdn/v1"
+		route.APIVersion = "sdn.dtn-satellite-sdn/v1"
 		route.Kind = "Route"
 		route.Name = nameMap[idx1]
+		routeKeyList = append(
+			routeKeyList,
+			common.RouteKeyPrefix+common.VersionPrefix+"/"+route.Name,
+		)
 		for idx2 := range routeTable[idx1] {
 			if idx1 != idx2 {
 				// New routes for target Pod
@@ -99,16 +104,6 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 	// Create/update routeList with RESTClient according to variable isFirstTime
 	if isFirstTime {
 		log.Println("Creating routes...")
-		// for _, route := range routeList.Items {
-		// 	if err := restClient.Post().
-		// 		Namespace(namespace).
-		// 		Resource("routes").
-		// 		Body(&route).
-		// 		Do(context.TODO()).
-		// 		Into(nil); err != nil {
-		// 		return fmt.Errorf("apply route failure: %v", err)
-		// 	}
-		// }
 		wg := new(sync.WaitGroup)
 		wg.Add(util.ThreadNums)
 		for threadId := 0; threadId < util.ThreadNums; threadId++ {
@@ -131,31 +126,11 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 	} else {
 		log.Println("Updating routes...")
 		log.Println("Fetch route resources version")
-		routeVersionList := sdnv1.RouteList{}
-		resourceVersionMap := map[string]string{}
-		if err := restClient.Get().
-			Namespace(namespace).
-			Resource("routes").
-			Do(context.TODO()).
-			Into(&routeVersionList); err != nil {
-			return fmt.Errorf("get routelist error: %v", err)
+		client := common.NewRedisClient()
+		resourceVersionList, err := client.MultiGet(routeKeyList)
+		if err != nil {
+			return fmt.Errorf("fetch resource version error: %v", err)
 		}
-		log.Println("Update route resources version")
-		for _, route := range routeVersionList.Items {
-			resourceVersionMap[route.Name] = route.ResourceVersion
-		}
-		// for _, route := range routeList.Items {
-		// 	route.ResourceVersion = resourceVersionMap[route.Name]
-		// 	if err := restClient.Put().
-		// 		Namespace(namespace).
-		// 		Resource("routes").
-		// 		Name(route.Name).
-		// 		Body(&route).
-		// 		Do(context.TODO()).
-		// 		Into(nil); err != nil {
-		// 		return fmt.Errorf("update route failure: %v", err)
-		// 	}
-		// }
 		log.Println("Updating to API Server")
 		wg := new(sync.WaitGroup)
 		wg.Add(util.ThreadNums)
@@ -163,7 +138,7 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 			go func(id int) {
 				for routeId := id; routeId < len(routeList.Items); routeId += util.ThreadNums {
 					route := routeList.Items[routeId]
-					route.ResourceVersion = resourceVersionMap[route.Name]
+					route.ResourceVersion = resourceVersionList[routeId]
 					if err := restClient.Put().
 						Namespace(namespace).
 						Resource("routes").
@@ -180,7 +155,7 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 		wg.Wait()
 	}
 
-	return nil	
+	return nil
 }
 
 // Return route table for all nodes
@@ -214,7 +189,7 @@ func ComputeRouteThread(distanceMap [][]float64, routeTable [][]int, threadID in
 		dist := make([]float64, nodeCount)
 		copy(dist, distanceMap[idx])
 		visited[idx] = true
-		dijkstraPath := make([]int, nodeCount)	// Record next hop nodes(default is node(idx))
+		dijkstraPath := make([]int, nodeCount) // Record next hop nodes(default is node(idx))
 		for i := range dijkstraPath {
 			dijkstraPath[i] = i
 		}
@@ -234,12 +209,12 @@ func ComputeRouteThread(distanceMap [][]float64, routeTable [][]int, threadID in
 
 			// Iterate other nodes, update their minium distance to startNode
 			for j := 0; j < nodeCount; j++ {
-				if !visited[j] && dist[minIndex] + distanceMap[minIndex][j] < dist[j] {
+				if !visited[j] && dist[minIndex]+distanceMap[minIndex][j] < dist[j] {
 					dist[j] = dist[minIndex] + distanceMap[minIndex][j]
 					dijkstraPath[j] = dijkstraPath[minIndex]
 				}
 			}
-			
+
 			// Mark minIndex node as visited
 			visited[minIndex] = true
 		}

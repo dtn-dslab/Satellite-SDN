@@ -32,5 +32,3 @@ func TestGoPackageAccuracy(t *testing.T) {
 		fmt.Println(distance)
 	}
 }
-
-
