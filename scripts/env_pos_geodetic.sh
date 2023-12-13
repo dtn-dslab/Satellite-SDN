@@ -1,5 +1,6 @@
 #!/bin/bash
 
 CTL=$(cd "$(dirname $0)/../bin" && pwd)/sdnctl
+DATADIR=$(cd "$(dirname $0)/../sdn/data" && pwd)
 
-$CTL pos -t ~/dtn-satellite-sdn/sdn/data/geodetic.txt -n 0
+$CTL pos -t $DATADIR/geodetic.txt -n 0
