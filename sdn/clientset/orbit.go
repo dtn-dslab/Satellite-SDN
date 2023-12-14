@@ -38,6 +38,9 @@ type OrbitMeta struct {
 
 	// MissileNum stores the number of missiles
 	MissileNum int
+
+	// UsersNum stores the number of users
+	UserNum int
 }
 
 type OrbitInfo struct {
@@ -55,12 +58,15 @@ type OrbitInfo struct {
 
 	// Missiles stores the group of missile nodes
 	Missiles *satv2.Group
+
+	// Users stores the group of user nodes
+	Users *satv2.Group
 }
 
 // Function: ParseParamsQimeng
 // Description: Parsing params in http response for Qimeng
 // 1. param: Message from Qimeng
-func ParseParamsQimeng(params map[string]interface{}) (unixTimeStamp int64, satellites, stations, missiles []map[string]interface{}) {
+func ParseParamsQimeng(params map[string]interface{}) (unixTimeStamp int64, satellites, stations, missiles, users []map[string]interface{}) {
 	unixTimeStamp = (int64)(params["unixTimeStamp"].(float64))
 	if params["satellites"] != nil {
 		for _, intf := range params["satellites"].([]interface{}) {
@@ -77,6 +83,11 @@ func ParseParamsQimeng(params map[string]interface{}) (unixTimeStamp int64, sate
 			missiles = append(missiles, intf.(map[string]interface{}))
 		}
 	}
+	if params["userData"] != nil {
+		for _, intf := range params["userData"].([]interface{}) {
+			users = append(users, intf.(map[string]interface{}))
+		}
+	}
 	return
 }
 
@@ -84,12 +95,13 @@ func ParseParamsQimeng(params map[string]interface{}) (unixTimeStamp int64, sate
 // Description: Create orbit info with JSON params
 // 1. params: Message from Qimeng
 func NewOrbitInfo(params map[string]interface{}) *OrbitInfo {
-	unixTimeStamp, satellites, stations, missiles := ParseParamsQimeng(params)
+	unixTimeStamp, satellites, stations, missiles, users := ParseParamsQimeng(params)
 	info := OrbitInfo{
 		LowOrbitSats:   make(map[int]*satv2.Group),
 		HighOrbitSats:  make(map[int]*satv2.Group),
 		GroundStations: satv2.NewOtherGroup(satv2.GROUNDSTATION),
 		Missiles:       satv2.NewOtherGroup(satv2.MISSILE),
+		Users:			satv2.NewOtherGroup(satv2.USER),
 		Metadata:       &OrbitMeta{},
 	}
 	// Initialize low-orbit and high-orbit satellite groups
@@ -131,6 +143,14 @@ func NewOrbitInfo(params map[string]interface{}) *OrbitInfo {
 			satv2.NewOtherNode(satv2.MISSILE, missile),
 		)
 	}
+	// Initialize user groups
+	for _, user := range users {
+		info.Users.Nodes = append(
+			info.Users.Nodes, 
+			satv2.NewOtherNode(satv2.USER, user),
+		)
+	}
+
 	// Update Metadata
 	info.Metadata = info.UpdateMeta(unixTimeStamp)
 
@@ -141,7 +161,7 @@ func NewOrbitInfo(params map[string]interface{}) *OrbitInfo {
 // Description: Update orbit info with JSON params, also timestamp & uuidNodeMap in orbit metadata.
 // 1. params: Message from Qimeng
 func (o *OrbitInfo) Update(params map[string]interface{}) {
-	unixTimeStamp, satellites, stations, missiles := ParseParamsQimeng(params)
+	unixTimeStamp, satellites, stations, missiles, users := ParseParamsQimeng(params)
 	// Initialize uuid->Node map
 	uuidNodeMap := make(map[string]satv2.Node)
 	for _, sat := range satellites {
@@ -160,6 +180,10 @@ func (o *OrbitInfo) Update(params map[string]interface{}) {
 	}
 	for _, missile := range missiles {
 		node := satv2.NewOtherNode(satv2.MISSILE, missile)
+		uuidNodeMap[node.UUID] = node
+	}
+	for _, user := range users {
+		node := satv2.NewOtherNode(satv2.USER, user)
 		uuidNodeMap[node.UUID] = node
 	}
 	// Update variables in o.Metadata
@@ -185,6 +209,10 @@ func (o *OrbitInfo) Update(params map[string]interface{}) {
 		o.Missiles.Nodes[idx] = uuidNodeMap[missile.UUID]
 		o.Metadata.UUIDNodeMap[missile.UUID] = &o.Missiles.Nodes[idx]
 	}
+	for idx, user := range o.Users.Nodes {
+		o.Users.Nodes[idx] = uuidNodeMap[user.UUID]
+		o.Metadata.UUIDNodeMap[user.UUID] = &o.Users.Nodes[idx]
+	}
 }
 
 // Function: UpdateMeta
@@ -201,6 +229,7 @@ func (o *OrbitInfo) UpdateMeta(unixTimeStamp int64) *OrbitMeta {
 		HighOrbitNum:     0,
 		GroundStationNum: 0,
 		MissileNum:       0,
+		UserNum: 		  0,		
 	}
 	// Since we do not modify bucket, we can get same result each time we iterate map.
 	for idx1, group := range o.LowOrbitSats {
@@ -233,6 +262,13 @@ func (o *OrbitInfo) UpdateMeta(unixTimeStamp int64) *OrbitMeta {
 		meta.IndexUUIDMap[cur_idx] = node.UUID
 		meta.UUIDIndexMap[node.UUID] = cur_idx
 		meta.UUIDNodeMap[node.UUID] = &o.Missiles.Nodes[idx]
+		cur_idx++
+	}
+	for idx, node := range o.Users.Nodes {
+		meta.UserNum++
+		meta.IndexUUIDMap[cur_idx] = node.UUID
+		meta.UUIDIndexMap[node.UUID] = cur_idx
+		meta.UUIDNodeMap[node.UUID] = &o.Users.Nodes[idx]
 		cur_idx++
 	}
 	return &meta

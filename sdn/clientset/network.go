@@ -47,7 +47,8 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 	n.Metadata = info.Metadata
 	totalNodesNum :=
 		n.Metadata.LowOrbitNum + n.Metadata.HighOrbitNum +
-			n.Metadata.GroundStationNum + n.Metadata.MissileNum
+		n.Metadata.GroundStationNum + n.Metadata.MissileNum +
+		n.Metadata.UserNum
 	// totalGroupsNum := len(info.LowOrbitSats) + len(info.HighOrbitSats) + 2
 	n.DistanceMap = make([][]float64, totalNodesNum)
 	n.TopoGraph = make([][]bool, totalNodesNum)
@@ -116,7 +117,7 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 		}
 	}
 
-	// 4. Compute ground station & missile topology (with low-orbit satellites)
+	// 4. Compute ground station & missile & users topology (with low-orbit satellites)
 	lowOrbitGroups := []*satv2.Group{}
 	for _, group := range info.LowOrbitSats {
 		lowOrbitGroups = append(lowOrbitGroups, group)
@@ -134,6 +135,13 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 		missile_idx, sat_idx := n.Metadata.UUIDIndexMap[missile.UUID], n.Metadata.UUIDIndexMap[sat_uuid]
 		n.TopoGraph[missile_idx][sat_idx] = true
 		n.TopoGraph[sat_idx][missile_idx] = true
+	}
+	// Iterate Users
+	for _, user := range info.Users.Nodes {
+		sat_uuid := link.GetMinDistanceNode(&user, lowOrbitGroups, n.Metadata.TimeStamp)
+		user_idx, sat_idx := n.Metadata.UUIDIndexMap[user.UUID], n.Metadata.UUIDIndexMap[sat_uuid]
+		n.TopoGraph[user_idx][sat_idx] = true
+		n.TopoGraph[sat_idx][user_idx] = true
 	}
 
 	// 5. Compute RouteGraph
