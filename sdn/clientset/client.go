@@ -283,9 +283,11 @@ func (client *SDNClient) ApplyPod(nodeNum int) error {
 	}
 	podMeta := pod.PodMetadata{
 		IndexUUIDMap: client.OrbitClient.GetIndexUUIDMap(),
-		StationIdxMin: client.OrbitClient.Metadata.LowOrbitNum +
-			client.OrbitClient.Metadata.HighOrbitNum,
-		StationNum: client.OrbitClient.Metadata.GroundStationNum,
+		UserIdxMin: client.OrbitClient.Metadata.LowOrbitNum +
+			client.OrbitClient.Metadata.HighOrbitNum +
+			client.OrbitClient.Metadata.GroundStationNum +
+			client.OrbitClient.Metadata.MissileNum,
+		UserNum: client.OrbitClient.Metadata.UserNum,
 	}
 	return pod.PodSyncLoop(&podMeta, uuidAllocNodeMap)
 }

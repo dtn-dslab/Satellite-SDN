@@ -18,4 +18,19 @@ var (
 		"node12.dtn.lab": 4,
 		"node13.dtn.lab": 4,
 	}
+
+	ImageName 				= POD_IMAGE_NAME + ":" + POD_IMAGE_TAG
+	ImagePullPolicy 		= "IfNotPresent"
+
+	FlowPVCName 			= "podserver-wangshao-pvc"
+	FlowMountPath 			= "/flow"
+	FlowPortName 			= "flow"
+	FlowPort int32 			= 5202
+
+	RoutePortName 			= "route"
+	RoutePort int32 		= 8080
+
+	PrometheusPortName		= "prometheus"
+	PrometheusPort int32	= 2112
+
 )

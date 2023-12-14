@@ -15,8 +15,42 @@ import (
 
 type PodMetadata struct {
 	IndexUUIDMap  map[int]string
-	StationIdxMin int
-	StationNum    int
+	UserIdxMin int
+	UserNum    int
+}
+
+func ParseLabels(index int, meta *PodMetadata) map[string]string {
+	result := map[string]string {
+		"k8s-app": "iperf",
+	}
+	if index >= meta.UserIdxMin && 
+		index < meta.UserIdxMin + meta.UserNum {
+		if index < meta.UserIdxMin + meta.UserNum / 2 {
+			result["type"] = "client"
+		} else {
+			result["type"] = "server"
+		}
+	} 
+	return result
+}
+
+func ParseArgs(index int, meta *PodMetadata) string {
+	// TODO(yy): remove `PODNAME` environment variable,
+	// replace it with command `hostname`.
+	result := fmt.Sprintf(
+		"export PODNAME=%s;" +
+		"./start.sh %s %d",
+		meta.IndexUUIDMap[index], 
+		util.GetGlobalIP(uint(index)), index + 5000,
+	)
+	if index >= meta.UserIdxMin && 
+		index < meta.UserIdxMin + meta.UserNum {
+		if index < meta.UserIdxMin + meta.UserNum / 2 {
+			serverIP := util.GetGlobalIP(uint(index + meta.UserNum / 2))
+			result = fmt.Sprintf("export SERVERIP=%s;", serverIP) + result
+		} 
+	}
+	return result
 }
 
 // Function: PodSyncLoopV2
@@ -39,59 +73,36 @@ func PodSyncLoop(meta *PodMetadata, uuidAllocNodeMap map[string]string) error {
 	// Construct Pods
 	podList := []*v1.PodApplyConfiguration{}
 	for index, uuid := range meta.IndexUUIDMap {
-		sat_name := uuid
-		image_name := fmt.Sprintf("%s:%s", util.POD_IMAGE_NAME, util.POD_IMAGE_TAG)
-		image_pull_policy := "IfNotPresent"
-		flowpvc := "podserver-wangshao-pvc"
-		flow_mount_path := "/flow"
-		prometheus_port_name := "prometheus"
-		var port, prometheus_port, flow_port int32 = 8080, 2112, 5202
-		labels := map[string]string{
-			"k8s-app": "iperf",
-		}
-		args := fmt.Sprintf(
-			"export PODNAME=%s;"+
-				"./start.sh %s %d",
-			uuid, util.GetGlobalIP(uint(index)), index+5000,
-		)
-		// The flow configuration of ground station
-		// if index >= meta.StationIdxMin && index < meta.StationIdxMin+meta.StationNum {
-		// 	if index < meta.StationIdxMin+meta.StationNum/2 {
-		// 		labels["type"] = "client"
-		// 	} else {
-		// 		labels["type"] = "server"
-		// 		serverIP := util.GetGlobalIP(uint(index - meta.StationNum/2))
-		// 		args = fmt.Sprintf("export SERVERIP=%s;"+args, serverIP)
-		// 	}
-		// }
 		podConfig := &v1.PodApplyConfiguration{}
 		podConfig = podConfig.WithAPIVersion("v1")
 		podConfig = podConfig.WithKind("Pod")
-		podConfig = podConfig.WithName(sat_name)
-		podConfig = podConfig.WithLabels(labels)
+		podConfig = podConfig.WithName(uuid)
+		podConfig = podConfig.WithLabels(ParseLabels(index, meta))
 		podConfig = podConfig.WithSpec(
 			&v1.PodSpecApplyConfiguration{
 				Containers: []v1.ContainerApplyConfiguration{
 					{
-						Name:            &sat_name,
-						Image:           &image_name,
-						ImagePullPolicy: (*corev1.PullPolicy)(&image_pull_policy),
+						Name:            &uuid,
+						Image:           &util.ImageName,
+						ImagePullPolicy: (*corev1.PullPolicy)(&util.ImagePullPolicy),
 						Ports: []v1.ContainerPortApplyConfiguration{
 							{
-								ContainerPort: &port,
+								Name:			&util.RoutePortName,
+								ContainerPort: 	&util.RoutePort,
 							},
 							{
-								Name:          &prometheus_port_name,
-								ContainerPort: &prometheus_port,
+								Name:          	&util.PrometheusPortName,
+								ContainerPort: 	&util.PrometheusPort,
 							},
 							{
-								ContainerPort: &flow_port,
+								Name:			&util.FlowPortName,
+								ContainerPort: 	&util.FlowPort,
 							},
 						},
 						VolumeMounts: []v1.VolumeMountApplyConfiguration{
 							{
-								MountPath: &flow_mount_path,
-								Name:      &flowpvc,
+								MountPath: 		&util.FlowMountPath,
+								Name:     		&util.FlowPVCName,
 							},
 						},
 						Command: []string{
@@ -99,7 +110,7 @@ func PodSyncLoop(meta *PodMetadata, uuidAllocNodeMap map[string]string) error {
 							"-c",
 						},
 						Args: []string{
-							args,
+							ParseArgs(index, meta),
 						},
 						SecurityContext: &v1.SecurityContextApplyConfiguration{
 							Capabilities: &v1.CapabilitiesApplyConfiguration{
@@ -120,10 +131,10 @@ func PodSyncLoop(meta *PodMetadata, uuidAllocNodeMap map[string]string) error {
 				},
 				Volumes: []v1.VolumeApplyConfiguration{
 					{
-						Name: &flowpvc,
+						Name: &util.FlowPVCName,
 						VolumeSourceApplyConfiguration: v1.VolumeSourceApplyConfiguration{
 							PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSourceApplyConfiguration{
-								ClaimName: &flowpvc,
+								ClaimName: &util.FlowPVCName,
 							},
 						},
 					},
