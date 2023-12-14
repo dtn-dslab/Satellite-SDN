@@ -118,12 +118,12 @@ func GetTopoAmongLowOrbitGroup(
 	return result
 }
 
-// Function: LinkSyncLoopV2
+// Function: LinkSyncLoop
 // Description: Apply topologies according to indexUUIDMap and topoAscArray
 // 1. indexUUIDMap: node's index -> node's uuid
 // 2. topoAscArray: Topology graph in ascend array
 // 3. isFistTime: true->create, false->update.
-func LinkSyncLoopV2(indexUUIDMap map[int]string, topoAscArray [][]int, isFirstTime bool) error {
+func LinkSyncLoop(indexUUIDMap map[int]string, topoAscArray [][]int, isFirstTime bool) error {
 	// Initialize topologyList
 	topoList := topov1.TopologyList{}
 	for idx := 0; idx < len(indexUUIDMap); idx++ {

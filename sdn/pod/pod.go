@@ -23,7 +23,7 @@ type PodMetadata struct {
 // Description: Apply pods in which low-orbit satellites in one group are deployed to the same node.
 // 1. indexUUIDMap: node's index -> node's uuid.
 // 2. uuiAllocNodeMap: node's uuid -> allocNode's name(node1.dtn.lab), only stores low-orbit satellites's pairs.
-func PodSyncLoopV2(meta *PodMetadata, uuidAllocNodeMap map[string]string) error {
+func PodSyncLoop(meta *PodMetadata, uuidAllocNodeMap map[string]string) error {
 	// get clientset
 	clientset, err := util.GetClientset()
 	if err != nil {
@@ -55,15 +55,15 @@ func PodSyncLoopV2(meta *PodMetadata, uuidAllocNodeMap map[string]string) error 
 			uuid, util.GetGlobalIP(uint(index)), index+5000,
 		)
 		// The flow configuration of ground station
-		if index >= meta.StationIdxMin && index < meta.StationIdxMin+meta.StationNum {
-			if index < meta.StationIdxMin+meta.StationNum/2 {
-				labels["type"] = "client"
-			} else {
-				labels["type"] = "server"
-				serverIP := util.GetGlobalIP(uint(index - meta.StationNum/2))
-				args = fmt.Sprintf("export SERVERIP=%s;"+args, serverIP)
-			}
-		}
+		// if index >= meta.StationIdxMin && index < meta.StationIdxMin+meta.StationNum {
+		// 	if index < meta.StationIdxMin+meta.StationNum/2 {
+		// 		labels["type"] = "client"
+		// 	} else {
+		// 		labels["type"] = "server"
+		// 		serverIP := util.GetGlobalIP(uint(index - meta.StationNum/2))
+		// 		args = fmt.Sprintf("export SERVERIP=%s;"+args, serverIP)
+		// 	}
+		// }
 		podConfig := &v1.PodApplyConfiguration{}
 		podConfig = podConfig.WithAPIVersion("v1")
 		podConfig = podConfig.WithKind("Pod")

@@ -287,7 +287,7 @@ func (client *SDNClient) ApplyPod(nodeNum int) error {
 			client.OrbitClient.Metadata.HighOrbitNum,
 		StationNum: client.OrbitClient.Metadata.GroundStationNum,
 	}
-	return pod.PodSyncLoopV2(&podMeta, uuidAllocNodeMap)
+	return pod.PodSyncLoop(&podMeta, uuidAllocNodeMap)
 }
 
 // Function: ApplyTopo
@@ -296,7 +296,7 @@ func (client *SDNClient) ApplyTopo() error {
 	client.RWLock.RLock()
 	defer client.RWLock.RUnlock()
 	log.Println("Applying topology...")
-	return link.LinkSyncLoopV2(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray(), true)
+	return link.LinkSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray(), true)
 }
 
 // Function: UpdateTopo
@@ -305,7 +305,7 @@ func (client *SDNClient) UpdateTopo() error {
 	client.RWLock.RLock()
 	defer client.RWLock.RUnlock()
 	log.Println("Updating topology...")
-	return link.LinkSyncLoopV2(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray(), false)
+	return link.LinkSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray(), false)
 }
 
 // Function: ApplyRoute
