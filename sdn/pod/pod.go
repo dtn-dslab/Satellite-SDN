@@ -35,12 +35,8 @@ func ParseLabels(index int, meta *PodMetadata) map[string]string {
 }
 
 func ParseArgs(index int, meta *PodMetadata) string {
-	// TODO(yy): remove `PODNAME` environment variable,
-	// replace it with command `hostname`.
 	result := fmt.Sprintf(
-		"export PODNAME=%s;" +
 		"./start.sh %s %d",
-		meta.IndexUUIDMap[index], 
 		util.GetGlobalIP(uint(index)), index + 5000,
 	)
 	if index >= meta.UserIdxMin && 
