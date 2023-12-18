@@ -48,6 +48,7 @@ func RunSDNServer(url string, expectedNodeNum int, timeout int) error {
 		"/getRoute":         client.GetRouteFromAndToHandler,
 		"/getConnection":    client.GetRouteHopsHandler,
 		"/getDistance":      client.GetDistanceHanlder,
+		"/getSpreadArray":	 client.GetSpreadArrayHanlder,
 	}
 	for url, handler := range sdnHandlerMap {
 		http.HandleFunc(url, handler)
@@ -79,6 +80,7 @@ func RunSDNServerTest(url string, expectedNodeNum int, timeout int) error {
 		"/getRoute":         client.GetRouteFromAndToHandler,
 		"/getConnection":    client.GetRouteHopsHandler,
 		"/getDistance":      client.GetDistanceHanlder,
+		"/getSpreadArray":	 client.GetSpreadArrayHanlder,
 	}
 	for url, handler := range sdnHandlerMap {
 		http.HandleFunc(url, handler)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"ws/dtn-satellite-sdn/sdn/link"
@@ -20,11 +21,13 @@ type ClientInterface interface {
 	GetRouteFromAndTo(uuid1, uuid2 string) ([]string, error)
 	GetRouteHops(uuid, uuidList string) (string, error)
 	GetDistance(uuid1, uuid2 string) (float64, error)
+	GetSpreadArray(uuid string)([][]string, error)
 	CheckConnectionHandler(w http.ResponseWriter, r *http.Request)
 	GetTopoInAscArrayHandler(w http.ResponseWriter, r *http.Request)
 	GetRouteFromAndToHandler(w http.ResponseWriter, r *http.Request)
 	GetRouteHopsHandler(w http.ResponseWriter, r *http.Request)
 	GetDistanceHanlder(w http.ResponseWriter, r *http.Request)
+	GetSpreadArrayHanlder(w http.ResponseWriter, r *http.Request)
 	ApplyPod(nodeNum int) error
 	ApplyTopo() error
 	ApplyRoute() error
@@ -251,6 +254,44 @@ func (client *SDNClient) GetDistanceHanlder(w http.ResponseWriter, r *http.Reque
 	} else {
 		result := map[string]interface{}{
 			"result": distance,
+		}
+		content, _ := json.Marshal(result)
+		w.WriteHeader(http.StatusOK)
+		w.Write(content)
+	}
+}
+
+// Function: GetSpreadArray
+// Descritpion: Return route spread array for given node.
+func (client *SDNClient) GetSpreadArray(uuid string) ([]SpreadLink, error) {
+	client.RWLock.RLock()
+	defer client.RWLock.RUnlock()
+	uuidIndexMap := client.OrbitClient.GetUUIDIndexMap()
+	indexUUIDMap := client.OrbitClient.GetIndexUUIDMap()
+	if uuid_index, ok := uuidIndexMap[uuid]; !ok {
+		return nil, fmt.Errorf("uuid %s does not exist", uuid)
+	} else {
+		result := client.NetworkClient.GetSpreadArray(uuid_index)
+		for idx := range result {
+			start, _ := strconv.Atoi(result[idx].Start)
+			end, _ := strconv.Atoi(result[idx].End)
+			result[idx].Start = indexUUIDMap[start]
+			result[idx].End = indexUUIDMap[end]
+		}
+		return result, nil
+	}
+}
+
+// Function: GetSpreadArrayHanlder
+// Description: Http handler wrapper for GetSpread.
+func (client *SDNClient) GetSpreadArrayHanlder(w http.ResponseWriter, r *http.Request) {
+	uuid := r.URL.Query().Get("uuid")
+	if spreadArr, err := client.GetSpreadArray(uuid); err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(err.Error()))
+	} else {
+		result := map[string]interface{}{
+			"result": spreadArr,
 		}
 		content, _ := json.Marshal(result)
 		w.WriteHeader(http.StatusOK)

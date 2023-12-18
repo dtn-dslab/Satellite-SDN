@@ -3,6 +3,7 @@ package clientset
 import (
 	"fmt"
 	"sync"
+	"container/list"
 
 	"ws/dtn-satellite-sdn/sdn/link"
 	"ws/dtn-satellite-sdn/sdn/route"
@@ -17,6 +18,7 @@ type NetworkInterface interface {
 	GetRouteFromAndTo(idx1, idx2 int) []int
 	GetRouteHops(idx int, idxList []int) []int
 	GetDistance(idx1, idx2 int) float64
+	GetSpreadArray(idx int) [][]int
 }
 
 type Network struct {
@@ -215,4 +217,40 @@ func (n *Network) GetRouteHops(idx int, idxList []int) []int {
 
 func (n *Network) GetDistance(idx1, idx2 int) float64 {
 	return n.DistanceMap[idx1][idx2]
+}
+
+type SpreadLink struct {
+	Level int `json:"level"`
+	Start string `json:"start"`
+	End	  string `json:"end"`
+}
+
+func (n *Network) GetSpreadArray(idx int) []SpreadLink {
+	visited := map[int]bool{}
+	result := []SpreadLink{}
+	q := new(list.List)
+	q.Init().PushBack(idx)
+	visited[idx] = true
+	curLevel := 0
+	lowOrbitMaxIdx := n.Metadata.LowOrbitNum - 1
+	for q.Len() > 0 {
+		curLength := q.Len()
+		for i := 0; i < curLength; i++ {
+			from := q.Front().Value.(int)
+			for to := 0; to <= lowOrbitMaxIdx; to++ {
+				if n.TopoGraph[from][to] && !visited[to] {
+					q.PushBack(to)
+					visited[to] = true
+					result = append(result, SpreadLink{
+						Level: curLevel,
+						Start: fmt.Sprint(from),
+						End: fmt.Sprint(to),
+					})
+				}
+			}
+			q.Remove(q.Front())
+		}
+		curLevel++
+	}
+	return result
 }
