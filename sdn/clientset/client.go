@@ -272,9 +272,15 @@ func (client *SDNClient) ApplyPod(nodeNum int) error {
 		capacity[k] = v
 	}
 	for _, group := range client.OrbitClient.LowOrbitSats {
+		// Skip zero-capacity nodes.
+		for capacity[kubeNodeList[allocIdx]] == 0 {
+			allocIdx = (allocIdx + 1) % len(kubeNodeList)
+		}
+		// Alloc node to pod
 		for _, node := range group.Nodes {
 			uuidAllocNodeMap[node.UUID] = kubeNodeList[allocIdx]
 		}
+		// Update capacity.
 		capacity[kubeNodeList[allocIdx]]--
 		if capacity[kubeNodeList[allocIdx]] == 0 {
 			allocIdx = (allocIdx + 1) % len(kubeNodeList)

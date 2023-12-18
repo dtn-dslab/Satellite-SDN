@@ -83,7 +83,7 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 		route.Name = nameMap[idx1]
 		routeKeyList = append(
 			routeKeyList,
-			common.RouteKeyPrefix+common.VersionPrefix+"/"+route.Name,
+			common.RouteKeyPrefix + common.VersionPrefix + "/" + route.Name,
 		)
 		for idx2 := range routeTable[idx1] {
 			if idx1 != idx2 {
