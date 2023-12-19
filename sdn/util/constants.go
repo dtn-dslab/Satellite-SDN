@@ -1,13 +1,14 @@
 package util
 
 const (
-	DEBUG          = true
 	POD_IMAGE_NAME = "electronicwaste/podserver"
-	POD_IMAGE_TAG  = "v26"
+	POD_IMAGE_TAG  = "v27"
 	ThreadNums     = 64
 )
 
 var (
+	DEBUG          = false
+
 	NodeCapacity = map[string]int{
 		"node1.dtn.lab":  1,
 		"node2.dtn.lab":  1,
@@ -33,5 +34,4 @@ var (
 
 	PrometheusPortName		= "prometheus"
 	PrometheusPort int32	= 2112
-
 )

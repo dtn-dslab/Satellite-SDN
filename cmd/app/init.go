@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"ws/dtn-satellite-sdn/sdn"
+	"ws/dtn-satellite-sdn/sdn/util"
 )
 
 var (
@@ -13,6 +14,7 @@ var (
 	node     int
 	interval int
 	is_test  bool
+	is_debug bool
 
 	initCmd = &cobra.Command{
 		Use:   "init",
@@ -27,7 +29,7 @@ var (
 					return fmt.Errorf("init emulation environment failed: %v", err)
 				}
 			}
-			
+			util.DEBUG = is_debug
 			return nil
 		},
 	}
@@ -38,6 +40,7 @@ func init() {
 	initCmd.Flags().IntVarP(&node, "node", "n", 3, "Expected node num")
 	initCmd.Flags().IntVarP(&interval, "interval", "i", -1, "Assign update interval for Satellite SDN Controller (-1 means 'no update')")
 	initCmd.Flags().BoolVar(&is_test, "test", false, "Open the test mode")
+	initCmd.Flags().BoolVar(&is_debug, "debug", false, "Open the debug mode")
 
 	initCmd.MarkFlagRequired("url")
 	initCmd.MarkFlagRequired("node")
