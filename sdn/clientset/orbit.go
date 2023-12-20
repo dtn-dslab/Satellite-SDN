@@ -83,8 +83,8 @@ func ParseParamsQimeng(params map[string]interface{}) (unixTimeStamp int64, sate
 			missiles = append(missiles, intf.(map[string]interface{}))
 		}
 	}
-	if params["userData"] != nil {
-		for _, intf := range params["userData"].([]interface{}) {
+	if params["userDatas"] != nil {
+		for _, intf := range params["userDatas"].([]interface{}) {
 			users = append(users, intf.(map[string]interface{}))
 		}
 	}
@@ -107,6 +107,9 @@ func NewOrbitInfo(params map[string]interface{}) *OrbitInfo {
 	// Initialize low-orbit and high-orbit satellite groups
 	for _, sat := range satellites {
 		node := satv2.NewSatNode(satv2.LOWORBIT, sat)
+		if node.UUID == "53302" || node.UUID == "53347" {
+			continue
+		}
 		// Classify satellites by altitude 30000km
 		if node.Altitude < 30000 {
 			trackID := node.TrackID
@@ -166,6 +169,9 @@ func (o *OrbitInfo) Update(params map[string]interface{}) {
 	uuidNodeMap := make(map[string]satv2.Node)
 	for _, sat := range satellites {
 		node := satv2.NewSatNode(satv2.LOWORBIT, sat)
+		if node.UUID == "53302" || node.UUID == "53347" {
+			continue
+		}
 		// Classify satellites by altitude 30000km
 		if node.Altitude < 30000 {
 			uuidNodeMap[node.UUID] = node

@@ -2,7 +2,7 @@ package util
 
 const (
 	POD_IMAGE_NAME = "electronicwaste/podserver"
-	POD_IMAGE_TAG  = "v27"
+	POD_IMAGE_TAG  = "v28"
 	ThreadNums     = 64
 )
 
