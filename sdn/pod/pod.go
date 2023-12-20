@@ -43,7 +43,7 @@ func ParseArgs(index int, meta *PodMetadata) string {
 		index < meta.UserIdxMin + meta.UserNum {
 		if index < meta.UserIdxMin + meta.UserNum / 2 {
 			serverIP := util.GetGlobalIP(uint(index + meta.UserNum / 2))
-			result = fmt.Sprintf("export SERVERIP=%s;", serverIP) + result
+			result = fmt.Sprintf("echo %s > ip.conf;", serverIP) + result
 		} 
 	}
 	return result
