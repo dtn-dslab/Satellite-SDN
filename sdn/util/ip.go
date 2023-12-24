@@ -35,25 +35,24 @@ func GetPodIP(podName string) (string, error) {
 
 }
 
-// IP = uid << 8 | 0x1/0x2 (according to whether myID < peerID)
+// IP = uid << 2 | 0x1/0x2 (according to whether myID < peerID)
 // The highest bit of IP must be 1
-// Can support allocating IP to at most 2048 pods
+// Can support allocating IP to at most 2^14 pods
 func GetVxlanIP(myID, peerID uint) string {
-	var lowerID, higherID uint
+	var uid uint
 	netIP := make([]string, 4)
 	if myID < peerID {
-		lowerID, higherID = myID, peerID
-		netIP[3] = "1"
+		uid = ((myID << 15) + peerID) << 2
+		netIP[3] = fmt.Sprint(uid & 0xff | 0x01)
 	} else {
-		lowerID, higherID = peerID, myID
-		netIP[3] = "2"
+		uid = ((peerID << 15) + myID) << 2
+		netIP[3] = fmt.Sprint(uid & 0xff | 0x02)
 	}
-	uid := (lowerID << 12) + higherID
-	netIP[0] = fmt.Sprint((uid>>16)&0xff | 0x80)
-	netIP[1] = fmt.Sprint((uid >> 8) & 0xff)
-	netIP[2] = fmt.Sprint(uid & 0xff)
-
-	return strings.Join(netIP, ".") + "/24"
+	netIP[0] = fmt.Sprint((uid >> 24) & 0xff | 0x80)
+	netIP[1] = fmt.Sprint((uid >> 16) & 0xff)
+	netIP[2] = fmt.Sprint((uid >> 8) & 0xff)
+	
+	return strings.Join(netIP, ".") + "/30"
 }
 
 // Allocate global IP to pod according to its idx

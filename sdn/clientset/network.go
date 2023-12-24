@@ -3,6 +3,7 @@ package clientset
 import (
 	"fmt"
 	"sync"
+	"container/list"
 
 	"ws/dtn-satellite-sdn/sdn/link"
 	"ws/dtn-satellite-sdn/sdn/route"
@@ -17,6 +18,7 @@ type NetworkInterface interface {
 	GetRouteFromAndTo(idx1, idx2 int) []int
 	GetRouteHops(idx int, idxList []int) []int
 	GetDistance(idx1, idx2 int) float64
+	GetSpreadArray(idx int) [][]int
 }
 
 type Network struct {
@@ -47,7 +49,8 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 	n.Metadata = info.Metadata
 	totalNodesNum :=
 		n.Metadata.LowOrbitNum + n.Metadata.HighOrbitNum +
-			n.Metadata.GroundStationNum + n.Metadata.MissileNum
+		n.Metadata.GroundStationNum + n.Metadata.MissileNum +
+		n.Metadata.UserNum
 	// totalGroupsNum := len(info.LowOrbitSats) + len(info.HighOrbitSats) + 2
 	n.DistanceMap = make([][]float64, totalNodesNum)
 	n.TopoGraph = make([][]bool, totalNodesNum)
@@ -116,7 +119,7 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 		}
 	}
 
-	// 4. Compute ground station & missile topology (with low-orbit satellites)
+	// 4. Compute ground station & missile & users topology (with low-orbit satellites)
 	lowOrbitGroups := []*satv2.Group{}
 	for _, group := range info.LowOrbitSats {
 		lowOrbitGroups = append(lowOrbitGroups, group)
@@ -134,6 +137,13 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 		missile_idx, sat_idx := n.Metadata.UUIDIndexMap[missile.UUID], n.Metadata.UUIDIndexMap[sat_uuid]
 		n.TopoGraph[missile_idx][sat_idx] = true
 		n.TopoGraph[sat_idx][missile_idx] = true
+	}
+	// Iterate Users
+	for _, user := range info.Users.Nodes {
+		sat_uuid := link.GetMinDistanceNode(&user, lowOrbitGroups, n.Metadata.TimeStamp)
+		user_idx, sat_idx := n.Metadata.UUIDIndexMap[user.UUID], n.Metadata.UUIDIndexMap[sat_uuid]
+		n.TopoGraph[user_idx][sat_idx] = true
+		n.TopoGraph[sat_idx][user_idx] = true
 	}
 
 	// 5. Compute RouteGraph
@@ -207,4 +217,40 @@ func (n *Network) GetRouteHops(idx int, idxList []int) []int {
 
 func (n *Network) GetDistance(idx1, idx2 int) float64 {
 	return n.DistanceMap[idx1][idx2]
+}
+
+type SpreadLink struct {
+	Level int `json:"level"`
+	Start string `json:"start"`
+	End	  string `json:"end"`
+}
+
+func (n *Network) GetSpreadArray(idx int) []SpreadLink {
+	visited := map[int]bool{}
+	result := []SpreadLink{}
+	q := new(list.List)
+	q.Init().PushBack(idx)
+	visited[idx] = true
+	curLevel := 0
+	lowOrbitMaxIdx := n.Metadata.LowOrbitNum - 1
+	for q.Len() > 0 {
+		curLength := q.Len()
+		for i := 0; i < curLength; i++ {
+			from := q.Front().Value.(int)
+			for to := 0; to <= lowOrbitMaxIdx; to++ {
+				if n.TopoGraph[from][to] && !visited[to] {
+					q.PushBack(to)
+					visited[to] = true
+					result = append(result, SpreadLink{
+						Level: curLevel,
+						Start: fmt.Sprint(from),
+						End: fmt.Sprint(to),
+					})
+				}
+			}
+			q.Remove(q.Front())
+		}
+		curLevel++
+	}
+	return result
 }
