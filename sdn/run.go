@@ -82,6 +82,7 @@ func RunSDNServerTest(url string, expectedNodeNum int, timeout int) error {
 		"/getConnection":    client.GetRouteHopsHandler,
 		"/getDistance":      client.GetDistanceHanlder,
 		"/getSpreadArray":	 client.GetSpreadArrayHanlder,
+		"/metrics":			 client.GetFakeMetricsHandler,
 	}
 	for url, handler := range sdnHandlerMap {
 		http.HandleFunc(url, handler)
