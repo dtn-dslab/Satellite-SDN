@@ -12,6 +12,7 @@ import (
 	"ws/dtn-satellite-sdn/sdn/pod"
 	"ws/dtn-satellite-sdn/sdn/route"
 	"ws/dtn-satellite-sdn/sdn/util"
+	"ws/dtn-satellite-sdn/sdn/metrics"
 )
 
 type ClientInterface interface {
@@ -28,6 +29,7 @@ type ClientInterface interface {
 	GetRouteHopsHandler(w http.ResponseWriter, r *http.Request)
 	GetDistanceHanlder(w http.ResponseWriter, r *http.Request)
 	GetSpreadArrayHanlder(w http.ResponseWriter, r *http.Request)
+	GetFakeMetricsHandler(w http.ResponseWriter, r *http.Request)
 	ApplyPod(nodeNum int) error
 	ApplyTopo() error
 	ApplyRoute() error
@@ -296,6 +298,20 @@ func (client *SDNClient) GetSpreadArrayHanlder(w http.ResponseWriter, r *http.Re
 		content, _ := json.Marshal(result)
 		w.WriteHeader(http.StatusOK)
 		w.Write(content)
+	}
+}
+
+// Function: GetFakeMetricsHandler
+// Description: Http handler wrapper for GetFakeStarMetrics & GetFakeLinkMetrics
+func (client *SDNClient) GetFakeMetricsHandler(w http.ResponseWriter, r *http.Request) {
+	indexUUIDMap := client.OrbitClient.GetIndexUUIDMap()
+	topoArr, _ := client.GetTopoInAscArray()
+	stars, links := metrics.GetFakeStarMetrics(indexUUIDMap), metrics.GetFakeLinkMetrics(topoArr)
+	for _, star := range stars {
+		fmt.Fprintln(w, star)
+	}
+	for _, link := range links {
+		fmt.Fprintln(w, link)
 	}
 }
 
