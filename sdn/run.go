@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os/exec"
 	"time"
 
 	"ws/dtn-satellite-sdn/sdn/clientset"
@@ -48,6 +49,7 @@ func RunSDNServer(url string, expectedNodeNum int, timeout int) error {
 		"/getRoute":         client.GetRouteFromAndToHandler,
 		"/getConnection":    client.GetRouteHopsHandler,
 		"/getDistance":      client.GetDistanceHanlder,
+		"/getSpreadArray":	 client.GetSpreadArrayHanlder,
 	}
 	for url, handler := range sdnHandlerMap {
 		http.HandleFunc(url, handler)
@@ -79,6 +81,8 @@ func RunSDNServerTest(url string, expectedNodeNum int, timeout int) error {
 		"/getRoute":         client.GetRouteFromAndToHandler,
 		"/getConnection":    client.GetRouteHopsHandler,
 		"/getDistance":      client.GetDistanceHanlder,
+		"/getSpreadArray":	 client.GetSpreadArrayHanlder,
+		"/metrics":			 client.GetFakeMetricsHandler,
 	}
 	for url, handler := range sdnHandlerMap {
 		http.HandleFunc(url, handler)
@@ -86,4 +90,19 @@ func RunSDNServerTest(url string, expectedNodeNum int, timeout int) error {
 
 	// Start Server
 	return http.ListenAndServe(":30102", nil)
+}
+
+func RunRestartTestServer(scriptPath string) error {
+	http.HandleFunc("/restart", func(w http.ResponseWriter, r *http.Request) {
+		cmd := exec.Command(scriptPath)
+		if output, err := cmd.CombinedOutput(); err != nil {
+			log.Printf("[Error]: %v\n", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write(output)
+		} else {
+			log.Println("Restart successfully!")
+			w.WriteHeader(http.StatusOK)
+		}
+	})
+	return http.ListenAndServe(":30103", nil)
 }

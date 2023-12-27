@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"ws/dtn-satellite-sdn/sdn/link"
 	"ws/dtn-satellite-sdn/sdn/pod"
 	"ws/dtn-satellite-sdn/sdn/route"
 	"ws/dtn-satellite-sdn/sdn/util"
+	"ws/dtn-satellite-sdn/sdn/metrics"
 )
 
 type ClientInterface interface {
@@ -20,11 +22,14 @@ type ClientInterface interface {
 	GetRouteFromAndTo(uuid1, uuid2 string) ([]string, error)
 	GetRouteHops(uuid, uuidList string) (string, error)
 	GetDistance(uuid1, uuid2 string) (float64, error)
+	GetSpreadArray(uuid string)([][]string, error)
 	CheckConnectionHandler(w http.ResponseWriter, r *http.Request)
 	GetTopoInAscArrayHandler(w http.ResponseWriter, r *http.Request)
 	GetRouteFromAndToHandler(w http.ResponseWriter, r *http.Request)
 	GetRouteHopsHandler(w http.ResponseWriter, r *http.Request)
 	GetDistanceHanlder(w http.ResponseWriter, r *http.Request)
+	GetSpreadArrayHanlder(w http.ResponseWriter, r *http.Request)
+	GetFakeMetricsHandler(w http.ResponseWriter, r *http.Request)
 	ApplyPod(nodeNum int) error
 	ApplyTopo() error
 	ApplyRoute() error
@@ -258,6 +263,58 @@ func (client *SDNClient) GetDistanceHanlder(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+// Function: GetSpreadArray
+// Descritpion: Return route spread array for given node.
+func (client *SDNClient) GetSpreadArray(uuid string) ([]SpreadLink, error) {
+	client.RWLock.RLock()
+	defer client.RWLock.RUnlock()
+	uuidIndexMap := client.OrbitClient.GetUUIDIndexMap()
+	indexUUIDMap := client.OrbitClient.GetIndexUUIDMap()
+	if uuid_index, ok := uuidIndexMap[uuid]; !ok {
+		return nil, fmt.Errorf("uuid %s does not exist", uuid)
+	} else {
+		result := client.NetworkClient.GetSpreadArray(uuid_index)
+		for idx := range result {
+			start, _ := strconv.Atoi(result[idx].Start)
+			end, _ := strconv.Atoi(result[idx].End)
+			result[idx].Start = indexUUIDMap[start]
+			result[idx].End = indexUUIDMap[end]
+		}
+		return result, nil
+	}
+}
+
+// Function: GetSpreadArrayHanlder
+// Description: Http handler wrapper for GetSpread.
+func (client *SDNClient) GetSpreadArrayHanlder(w http.ResponseWriter, r *http.Request) {
+	uuid := r.URL.Query().Get("uuid")
+	if spreadArr, err := client.GetSpreadArray(uuid); err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(err.Error()))
+	} else {
+		result := map[string]interface{}{
+			"result": spreadArr,
+		}
+		content, _ := json.Marshal(result)
+		w.WriteHeader(http.StatusOK)
+		w.Write(content)
+	}
+}
+
+// Function: GetFakeMetricsHandler
+// Description: Http handler wrapper for GetFakeStarMetrics & GetFakeLinkMetrics
+func (client *SDNClient) GetFakeMetricsHandler(w http.ResponseWriter, r *http.Request) {
+	indexUUIDMap := client.OrbitClient.GetIndexUUIDMap()
+	topoArr, _ := client.GetTopoInAscArray()
+	stars, links := metrics.GetFakeStarMetrics(indexUUIDMap), metrics.GetFakeLinkMetrics(topoArr)
+	for _, star := range stars {
+		fmt.Fprintln(w, star)
+	}
+	for _, link := range links {
+		fmt.Fprintln(w, link)
+	}
+}
+
 // Function: ApplyPod
 // Description: Apply pods according to infos in SDNClient
 func (client *SDNClient) ApplyPod(nodeNum int) error {
@@ -272,9 +329,15 @@ func (client *SDNClient) ApplyPod(nodeNum int) error {
 		capacity[k] = v
 	}
 	for _, group := range client.OrbitClient.LowOrbitSats {
+		// Skip zero-capacity nodes.
+		for capacity[kubeNodeList[allocIdx]] == 0 {
+			allocIdx = (allocIdx + 1) % len(kubeNodeList)
+		}
+		// Alloc node to pod
 		for _, node := range group.Nodes {
 			uuidAllocNodeMap[node.UUID] = kubeNodeList[allocIdx]
 		}
+		// Update capacity.
 		capacity[kubeNodeList[allocIdx]]--
 		if capacity[kubeNodeList[allocIdx]] == 0 {
 			allocIdx = (allocIdx + 1) % len(kubeNodeList)
@@ -283,11 +346,13 @@ func (client *SDNClient) ApplyPod(nodeNum int) error {
 	}
 	podMeta := pod.PodMetadata{
 		IndexUUIDMap: client.OrbitClient.GetIndexUUIDMap(),
-		StationIdxMin: client.OrbitClient.Metadata.LowOrbitNum +
-			client.OrbitClient.Metadata.HighOrbitNum,
-		StationNum: client.OrbitClient.Metadata.GroundStationNum,
+		UserIdxMin: client.OrbitClient.Metadata.LowOrbitNum +
+			client.OrbitClient.Metadata.HighOrbitNum +
+			client.OrbitClient.Metadata.GroundStationNum +
+			client.OrbitClient.Metadata.MissileNum,
+		UserNum: client.OrbitClient.Metadata.UserNum,
 	}
-	return pod.PodSyncLoopV2(&podMeta, uuidAllocNodeMap)
+	return pod.PodSyncLoop(&podMeta, uuidAllocNodeMap)
 }
 
 // Function: ApplyTopo
@@ -296,7 +361,7 @@ func (client *SDNClient) ApplyTopo() error {
 	client.RWLock.RLock()
 	defer client.RWLock.RUnlock()
 	log.Println("Applying topology...")
-	return link.LinkSyncLoopV2(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray(), true)
+	return link.LinkSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray(), true)
 }
 
 // Function: UpdateTopo
@@ -305,7 +370,7 @@ func (client *SDNClient) UpdateTopo() error {
 	client.RWLock.RLock()
 	defer client.RWLock.RUnlock()
 	log.Println("Updating topology...")
-	return link.LinkSyncLoopV2(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray(), false)
+	return link.LinkSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray(), false)
 }
 
 // Function: ApplyRoute

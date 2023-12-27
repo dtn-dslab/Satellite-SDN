@@ -14,6 +14,7 @@ const (
 	GROUNDSTATION = 3
 	MISSILE       = 4
 	FIXED         = 5
+	USER		  = 6
 
 	NAME_PREFIX_V2 = "sdn"
 )
