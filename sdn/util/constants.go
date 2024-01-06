@@ -2,7 +2,7 @@ package util
 
 const (
 	POD_IMAGE_NAME = "electronicwaste/podserver"
-	POD_IMAGE_TAG  = "v28"
+	POD_IMAGE_TAG  = "v29"
 	ThreadNums     = 64
 )
 
@@ -13,12 +13,18 @@ var (
 		"node1.dtn.lab":  1,
 		"node2.dtn.lab":  1,
 		"node3.dtn.lab":  1,
-		"node4.dtn.lab":  3,
-		"node5.dtn.lab":  3,
-		"node6.dtn.lab":  3,
+		"node4.dtn.lab":  2,
+		"node5.dtn.lab":  2,
+		"node6.dtn.lab":  2,
 		"node7.dtn.lab":  1,
+		"node11.dtn.lab": 1,
 		"node12.dtn.lab": 4,
 		"node13.dtn.lab": 4,
+		"node14.dtn.lab": 4,
+		"node15.dtn.lab": 4,
+		"node16.dtn.lab": 4,
+		"node17.dtn.lab": 4,
+		"node18.dtn.lab": 4,
 	}
 
 	ImageName 				= POD_IMAGE_NAME + ":" + POD_IMAGE_TAG

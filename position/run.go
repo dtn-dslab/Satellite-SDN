@@ -2,12 +2,13 @@ package position
 
 import (
 	"encoding/json"
-	"fmt"
 	"math"
 	"net/http"
 	"time"
 
 	sdnv1 "ws/dtn-satellite-sdn/sdn/type/v1"
+
+	"github.com/sirupsen/logrus"
 )
 
 type PositionServerInterface interface {
@@ -57,6 +58,7 @@ func (ps *PositionServer) GetLocationHandler(w http.ResponseWriter, req *http.Re
 	if err := ps.UpdateCache(); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
+		logrus.WithError(err).Error("update cache failed.")
 	}
 	retParams := RetParams{
 		TimeStamp:  ps.timeStamp.UnixMilli(),
@@ -68,7 +70,7 @@ func (ps *PositionServer) GetLocationHandler(w http.ResponseWriter, req *http.Re
 	for _, sat := range ps.cache.satCache {
 		retParams.Satellites = append(retParams.Satellites, *sat)
 	}
-	fmt.Println(retParams)
+	logrus.Debugf("return value is %v", retParams)
 	content, _ := json.Marshal(&retParams)
 	w.WriteHeader(http.StatusOK)
 	w.Write(content)
@@ -94,6 +96,7 @@ func (ps *PositionServer) UpdateCache() error {
 			ps.timeStamp.Hour(),
 			ps.timeStamp.Minute(),
 			ps.timeStamp.Second()
+		logrus.Info("update longitude, latitude, altitude in cache")
 		for _, sat := range ps.c.Satellites {
 			long, lat, alt := sat.LocationAtTime(
 				year, month, day,
@@ -164,7 +167,6 @@ func (ps *PositionServer) ComputeSatsCache() {
 				}
 			}
 		}
-		fmt.Println(classifySatsUUIDList)
 		curTrackID++
 	}
 	// Bubble sort satellites according to Angle to get inTrackID
@@ -185,8 +187,8 @@ func (ps *PositionServer) ComputeSatsCache() {
 			ps.cache.satCache[key].InTrackID = inTrackID
 		}
 	}
-
-	fmt.Println(classifySatsUUIDList)
+	
+	logrus.WithField("group-num", len(classifySatsUUIDList)).Debug(classifySatsUUIDList)
 }
 
 // Function: RunPositionModule
