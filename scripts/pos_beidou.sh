@@ -3,4 +3,4 @@
 CTL=$(cd "$(dirname $0)/../bin" && pwd)/sdnctl
 DATADIR=$(cd "$(dirname $0)/../sdn/data" && pwd)
 
-$CTL pos -t $DATADIR/starlink.txt -n 0
+$CTL pos -t $DATADIR/beidou.txt -n 0 --max 20

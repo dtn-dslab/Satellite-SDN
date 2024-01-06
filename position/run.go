@@ -30,10 +30,18 @@ type PositionCache struct {
 	fixedCache []FixedParams
 }
 
-func NewPositionServer(inputPath string, num int) *PositionServer {
+const (
+	MaxOrbitSize int = 50
+)
+
+func NewPositionServer(inputPath string, num int, maxNum int) *PositionServer {
 	if constellation, err := sdnv1.NewConstellation(inputPath); err != nil {
 		panic(err)
 	} else {
+		satelliteNum := len(constellation.Satellites)
+		if satelliteNum > maxNum {
+			constellation.Satellites = constellation.Satellites[:maxNum]
+		}
 		return &PositionServer{
 			c:        constellation,
 			cache:    nil,
@@ -127,7 +135,7 @@ func (ps *PositionServer) ComputeSatsCache() {
 	curTrackID, remainNode := 0, len(ps.cache.satCache)
 	classifySatsUUIDList := [][]string{}
 	visited := make(map[string]bool, remainNode)
-	for k, _ := range ps.cache.satCache {
+	for k := range ps.cache.satCache {
 		visited[k] = false
 	}
 	for remainNode > 0 {
@@ -140,6 +148,7 @@ func (ps *PositionServer) ComputeSatsCache() {
 			}
 		}
 		// Iterate to find sats in the same track(|height - standardHeight| < 500)
+		curOrbitSize := 0
 		for key, sat := range ps.cache.satCache {
 			if !visited[key] && math.Abs(sat.Altitude-standardHeight) < 500 {
 				if len(classifySatsUUIDList) <= curTrackID {
@@ -148,8 +157,14 @@ func (ps *PositionServer) ComputeSatsCache() {
 				classifySatsUUIDList[curTrackID] = append(classifySatsUUIDList[curTrackID], key) // Update result
 				visited[key] = true                                                              // Mark as visited
 				remainNode--
+				curOrbitSize++
+				if curOrbitSize >= MaxOrbitSize {
+					curTrackID++
+					curOrbitSize = 0
+				}
 			}
 		}
+		fmt.Println(classifySatsUUIDList)
 		curTrackID++
 	}
 	// Bubble sort satellites according to Angle to get inTrackID
@@ -178,9 +193,10 @@ func (ps *PositionServer) ComputeSatsCache() {
 // Description: Start Position Computing Module.
 // 1. inputPath: TLE file's path.
 // 2. fixedNum: The number of fixed network pod expected to generate.
-func RunPositionModule(inputPath string, fixedNum int) {
+// 3. maxNum: The max number of satellites.
+func RunPositionModule(inputPath string, fixedNum int, maxNum int) {
 	// Construct Constellation from file
-	ps := NewPositionServer(inputPath, fixedNum)
+	ps := NewPositionServer(inputPath, fixedNum, maxNum)
 
 	// Bind handler and start server
 	http.HandleFunc("/location", ps.GetLocationHandler)
