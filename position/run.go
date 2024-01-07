@@ -33,7 +33,7 @@ type PositionCache struct {
 }
 
 const (
-	MaxOrbitSize int = 50
+	MaxOrbitSize int = 10
 )
 
 func NewPositionServer(inputPath string, num int, maxNum int) *PositionServer {
@@ -44,7 +44,7 @@ func NewPositionServer(inputPath string, num int, maxNum int) *PositionServer {
 	})
 	logger.Info("initializing position server...")
 	if constellation, err := sdnv1.NewConstellation(inputPath); err != nil {
-		logrus.WithError(err).Fatal("create constellation failed")
+		logrus.WithError(err).Panic("create constellation failed")
 		return nil
 	} else {
 		satelliteNum := len(constellation.Satellites)
@@ -60,6 +60,7 @@ func NewPositionServer(inputPath string, num int, maxNum int) *PositionServer {
 				fixedCache: GetFixedNodes(num),
 			},
 			fixedNum: num,
+			timeStamp: time.Now(),
 		}
 		ps.Init()
 		logger.Info("position server has been initailized")
@@ -79,8 +80,8 @@ func (ps *PositionServer) GetLocationHandler(w http.ResponseWriter, req *http.Re
 	retParams := RetParams{
 		TimeStamp:  ps.timeStamp.UnixMilli(),
 		Satellites: []SatParams{},
-		Missiles:   ps.cache.msCache,
-		Stations:   ps.cache.gsCache,
+		// Missiles:   ps.cache.msCache,
+		// Stations:   ps.cache.gsCache,
 		FixedNodes: ps.cache.fixedCache,
 	}
 	for _, sat := range ps.cache.satCache {

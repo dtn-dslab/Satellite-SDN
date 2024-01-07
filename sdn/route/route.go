@@ -12,6 +12,7 @@ import (
 	"ws/dtn-satellite-sdn/common"
 	"ws/dtn-satellite-sdn/sdn/util"
 
+	"github.com/sirupsen/logrus"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,9 +33,13 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 		return fmt.Errorf("get namespace error: %v", err)
 	}
 
+	logger := logrus.WithFields(logrus.Fields{
+		"is-first-time": isFirstTime,
+	})
+
 	// Get pods' ip
 	podIPTable := map[string]string{}
-	log.Println("Getting ip...")
+	logger.Info("Getting ip...")
 	if isFirstTime {
 		for {
 			if podList, err := clientset.CoreV1().
@@ -50,13 +55,13 @@ func RouteSyncLoop(nameMap map[int]string, routeTable [][]int, isFirstTime bool)
 					}
 				}
 				if isContinue {
-					log.Println("retry")
+					logger.Info("retry")
 					duration := 3000 + rand.Int31()%2000
 					time.Sleep(time.Duration(duration) * time.Millisecond)
 					continue
 				}
 			} else {
-				log.Panic(err)
+				logger.WithError(err).Panic()
 			}
 			break
 		}
