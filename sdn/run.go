@@ -1,44 +1,58 @@
 package sdn
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os/exec"
 	"time"
 
 	"ws/dtn-satellite-sdn/sdn/clientset"
+
+	"github.com/sirupsen/logrus"
 )
 
 type HttpHandler func(http.ResponseWriter, *http.Request)
 
 func RunSDNServer(url string, expectedNodeNum int, timeout int) error {
-	// Create new clientset， set syncloop
+	// Create new clientset
+	logger := logrus.WithFields(logrus.Fields{
+		"url": 		url,
+		"node-num": expectedNodeNum,
+		"timeout":  timeout,
+	})
+	logger.WithField("time", time.Now()).Info("start sdn server")
+
 	client := clientset.NewSDNClient(url)
 	if err := client.ApplyTopo(); err != nil {
-		return fmt.Errorf("apply topology error: %v", err)
+		logger.WithError(err).Error("apply topology failed")
+		return err
 	}
 	if err := client.ApplyPod(expectedNodeNum); err != nil {
-		return fmt.Errorf("apply pod error: %v", err)
+		logger.WithError(err).Error("apply pod failed")
+		return err
 	}
 	if err := client.ApplyRoute(); err != nil {
-		return fmt.Errorf("apply route error: %v", err)
+		logger.WithError(err).Error("apply route failed")
+		return err
 	}
-	log.Println("Done!")
+	logger.WithField("time", time.Now()).Info("sdn server has been started!")
+
+	// Set up sync loop
 	if timeout != -1 {
 		go func() {
 			for {
 				time.Sleep(time.Duration(timeout) * time.Second)
+				logger.WithField("time", time.Now()).Info("update sdn server.")
 				if err := client.FetchAndUpdate(); err != nil {
-					fmt.Printf("fetch and update topology error: %v\n", err)
+					logger.WithError(err).Error("fetch and update topology err")
 				}
 				if err := client.UpdateTopo(); err != nil {
-					fmt.Printf("apply topology error: %v\n", err)
+					logger.WithError(err).Error("update topology error")
 				}
 				if err := client.UpdateRoute(); err != nil {
-					fmt.Printf("apply route error: %v\n", err)
+					logger.WithError(err).Error("update route error")
 				}
-				log.Println("Done!")
+				logger.WithField("time", time.Now()).Info("sdn server has been updated!")
 			}
 		}()
 	}
@@ -60,17 +74,27 @@ func RunSDNServer(url string, expectedNodeNum int, timeout int) error {
 }
 
 func RunSDNServerTest(url string, expectedNodeNum int, timeout int) error {
-	// Create new clientset， set syncloop
+	// Create new clientset
+	logger := logrus.WithFields(logrus.Fields{
+		"url": 		url,
+		"node-num": expectedNodeNum,
+		"timeout":  timeout,
+	})
+	logger.WithField("time", time.Now()).Info("start sdn server.")
+
 	client := clientset.NewSDNClient(url)
-	log.Println("Done!")
+	logger.WithField("time", time.Now()).Info("sdn server has been started!")
+
+	// Set up sync loop
 	if timeout != -1 {
 		go func() {
 			for {
 				time.Sleep(time.Duration(timeout) * time.Second)
+				logger.WithField("time", time.Now()).Info("update sdn server.")
 				if err := client.FetchAndUpdate(); err != nil {
-					fmt.Printf("fetch and update topology error: %v\n", err)
+					logger.WithError(err).Error("fetch and update topology error")
 				}
-				log.Println("Done!")
+				logger.WithField("time", time.Now()).Info("sdn server has been updated!")
 			}
 		}()
 	}

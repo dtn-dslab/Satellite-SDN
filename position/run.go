@@ -5,6 +5,7 @@ import (
 	"math"
 	"net/http"
 	"time"
+	"sync"
 
 	sdnv1 "ws/dtn-satellite-sdn/sdn/type/v1"
 
@@ -13,8 +14,8 @@ import (
 
 type PositionServerInterface interface {
 	GetLocationHanlder(http.ResponseWriter, *http.Request)
-	ComputeSatsCache()
-	UpdateCache() error
+	Init()
+	Update() error
 }
 
 type PositionServer struct {
@@ -36,18 +37,33 @@ const (
 )
 
 func NewPositionServer(inputPath string, num int, maxNum int) *PositionServer {
+	logger := logrus.WithFields(logrus.Fields{
+		"input-path": 		  inputPath,
+		"fixed-num":  		  num,
+		"max-satellites-num": maxNum,
+	})
+	logger.Info("initializing position server...")
 	if constellation, err := sdnv1.NewConstellation(inputPath); err != nil {
-		panic(err)
+		logrus.WithError(err).Fatal("create constellation failed")
+		return nil
 	} else {
 		satelliteNum := len(constellation.Satellites)
 		if satelliteNum > maxNum {
 			constellation.Satellites = constellation.Satellites[:maxNum]
 		}
-		return &PositionServer{
+		ps := PositionServer{
 			c:        constellation,
-			cache:    nil,
+			cache:    &PositionCache{
+				satCache:   make(map[string]*SatParams),
+				msCache:    GetMissiles(),
+				gsCache:    GetGroundStation(),
+				fixedCache: GetFixedNodes(num),
+			},
 			fixedNum: num,
 		}
+		ps.Init()
+		logger.Info("position server has been initailized")
+		return &ps
 	}
 }
 
@@ -55,7 +71,7 @@ func NewPositionServer(inputPath string, num int, maxNum int) *PositionServer {
 // Description: A http hanlder for getting location of all types of node.
 func (ps *PositionServer) GetLocationHandler(w http.ResponseWriter, req *http.Request) {
 	ps.timeStamp = time.Now()
-	if err := ps.UpdateCache(); err != nil {
+	if err := ps.Update(); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		logrus.WithError(err).Error("update cache failed.")
@@ -76,43 +92,40 @@ func (ps *PositionServer) GetLocationHandler(w http.ResponseWriter, req *http.Re
 	w.Write(content)
 }
 
-// Function: UpdateCache
+// Function: Update
 // Description: Update cache in ps.cache for future use.
-func (ps *PositionServer) UpdateCache() error {
-	if ps.cache == nil {
-		ps.cache = &PositionCache{
-			satCache:   make(map[string]*SatParams),
-			msCache:    GetMissiles(),
-			gsCache:    GetGroundStation(),
-			fixedCache: GetFixedNodes(ps.fixedNum),
-		}
-		ps.ComputeSatsCache()
-	} else {
-		// Update longitude, latitude, altitude in Satellites
-		year, month, day, hour, minute, second :=
-			ps.timeStamp.Year(),
-			int(ps.timeStamp.Month()),
-			ps.timeStamp.Day(),
-			ps.timeStamp.Hour(),
-			ps.timeStamp.Minute(),
-			ps.timeStamp.Second()
-		logrus.Info("update longitude, latitude, altitude in cache")
-		for _, sat := range ps.c.Satellites {
-			long, lat, alt := sat.LocationAtTime(
+func (ps *PositionServer) Update() error {
+	// Update longitude, latitude, altitude in Satellites
+	year, month, day, hour, minute, second :=
+		ps.timeStamp.Year(),
+		int(ps.timeStamp.Month()),
+		ps.timeStamp.Day(),
+		ps.timeStamp.Hour(),
+		ps.timeStamp.Minute(),
+		ps.timeStamp.Second()
+	logrus.Info("update longitude, latitude, altitude in cache")
+	
+	var wg sync.WaitGroup
+	wg.Add(len(ps.c.Satellites))
+	for _, sat := range ps.c.Satellites {
+		go func(s sdnv1.Satellite) {
+			long, lat, alt := s.LocationAtTime(
 				year, month, day,
 				hour, minute, second,
 			)
-			ps.cache.satCache[sat.Name].Longitude = long
-			ps.cache.satCache[sat.Name].Latitude = lat
-			ps.cache.satCache[sat.Name].Altitude = alt
-		}
+			ps.cache.satCache[s.Name].Longitude = long
+			ps.cache.satCache[s.Name].Latitude = lat
+			ps.cache.satCache[s.Name].Altitude = alt
+			wg.Done()
+		}(sat)
 	}
+	wg.Wait()
 	return nil
 }
 
-// Function: ComputeSatsCache
+// Function: Init
 // Description: Compute all of sats' information when cache is recently created.
-func (ps *PositionServer) ComputeSatsCache() {
+func (ps *PositionServer) Init() {
 	// Initialze satCache
 	year, month, day, hour, minute, second :=
 		ps.timeStamp.Year(),

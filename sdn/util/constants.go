@@ -7,8 +7,6 @@ const (
 )
 
 var (
-	DEBUG          = false
-
 	NodeCapacity = map[string]int{
 		"node1.dtn.lab":  1,
 		"node2.dtn.lab":  1,
