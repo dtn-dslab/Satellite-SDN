@@ -5,7 +5,7 @@ type RetParams struct {
 	Satellites []SatParams   `json:"satellites"`
 	Missiles   []MSParams    `json:"missiles"`
 	Stations   []GSParams    `json:"stations"`
-	FixedNodes []FixedParams `json:"fixedNodes"`
+	FixedNodes []FixedParams `json:"userDatas"`
 }
 
 type SatParams struct {

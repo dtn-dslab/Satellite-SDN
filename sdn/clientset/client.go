@@ -9,10 +9,12 @@ import (
 	"strings"
 	"sync"
 	"ws/dtn-satellite-sdn/sdn/link"
+	"ws/dtn-satellite-sdn/sdn/metrics"
 	"ws/dtn-satellite-sdn/sdn/pod"
 	"ws/dtn-satellite-sdn/sdn/route"
 	"ws/dtn-satellite-sdn/sdn/util"
-	"ws/dtn-satellite-sdn/sdn/metrics"
+
+	"github.com/sirupsen/logrus"
 )
 
 type ClientInterface interface {
@@ -322,7 +324,7 @@ func (client *SDNClient) ApplyPod(nodeNum int) error {
 	kubeNodeList, _ := util.GetSlaveNodes(nodeNum)
 	client.RWLock.RLock()
 	defer client.RWLock.RUnlock()
-	log.Println("Applying pod...")
+	logrus.WithField("node-num", nodeNum).Info("Applying pod...")
 	// Currently, we only need to allocate low-orbit satellites in one group to the same physical node.
 	capacity := map[string]int{}
 	for k, v := range util.NodeCapacity {
@@ -360,7 +362,7 @@ func (client *SDNClient) ApplyPod(nodeNum int) error {
 func (client *SDNClient) ApplyTopo() error {
 	client.RWLock.RLock()
 	defer client.RWLock.RUnlock()
-	log.Println("Applying topology...")
+	logrus.Info("Applying topology...")
 	return link.LinkSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray(), true)
 }
 
@@ -369,7 +371,7 @@ func (client *SDNClient) ApplyTopo() error {
 func (client *SDNClient) UpdateTopo() error {
 	client.RWLock.RLock()
 	defer client.RWLock.RUnlock()
-	log.Println("Updating topology...")
+	logrus.Info("Updating topology...")
 	return link.LinkSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.GetTopoInAscArray(), false)
 }
 
@@ -378,7 +380,7 @@ func (client *SDNClient) UpdateTopo() error {
 func (client *SDNClient) ApplyRoute() error {
 	client.RWLock.RLock()
 	defer client.RWLock.RUnlock()
-	log.Println("Applying route...")
+	logrus.Info("Applying route...")
 	return route.RouteSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.RouteGraph, true)
 }
 
@@ -387,6 +389,6 @@ func (client *SDNClient) ApplyRoute() error {
 func (client *SDNClient) UpdateRoute() error {
 	client.RWLock.RLock()
 	defer client.RWLock.RUnlock()
-	log.Println("Updating route...")
+	logrus.Info("Updating route...")
 	return route.RouteSyncLoop(client.OrbitClient.GetIndexUUIDMap(), client.NetworkClient.RouteGraph, false)
 }

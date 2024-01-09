@@ -86,21 +86,21 @@ func PodSyncLoop(meta *PodMetadata, uuidAllocNodeMap map[string]string) error {
 								Name:			&util.RoutePortName,
 								ContainerPort: 	&util.RoutePort,
 							},
-							{
-								Name:          	&util.PrometheusPortName,
-								ContainerPort: 	&util.PrometheusPort,
-							},
-							{
-								Name:			&util.FlowPortName,
-								ContainerPort: 	&util.FlowPort,
-							},
+							// {
+							// 	Name:          	&util.PrometheusPortName,
+							// 	ContainerPort: 	&util.PrometheusPort,
+							// },
+							// {
+							// 	Name:			&util.FlowPortName,
+							// 	ContainerPort: 	&util.FlowPort,
+							// },
 						},
-						VolumeMounts: []v1.VolumeMountApplyConfiguration{
-							{
-								MountPath: 		&util.FlowMountPath,
-								Name:     		&util.FlowPVCName,
-							},
-						},
+						// VolumeMounts: []v1.VolumeMountApplyConfiguration{
+						// 	{
+						// 		MountPath: 		&util.FlowMountPath,
+						// 		Name:     		&util.FlowPVCName,
+						// 	},
+						// },
 						Command: []string{
 							"/bin/sh",
 							"-c",

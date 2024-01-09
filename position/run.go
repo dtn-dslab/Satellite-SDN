@@ -2,18 +2,20 @@ package position
 
 import (
 	"encoding/json"
-	"fmt"
 	"math"
 	"net/http"
 	"time"
+	"sync"
 
 	sdnv1 "ws/dtn-satellite-sdn/sdn/type/v1"
+
+	"github.com/sirupsen/logrus"
 )
 
 type PositionServerInterface interface {
 	GetLocationHanlder(http.ResponseWriter, *http.Request)
-	ComputeSatsCache()
-	UpdateCache() error
+	Init()
+	Update() error
 }
 
 type PositionServer struct {
@@ -30,15 +32,39 @@ type PositionCache struct {
 	fixedCache []FixedParams
 }
 
-func NewPositionServer(inputPath string, num int) *PositionServer {
+const (
+	MaxOrbitSize int = 10
+)
+
+func NewPositionServer(inputPath string, num int, maxNum int) *PositionServer {
+	logger := logrus.WithFields(logrus.Fields{
+		"input-path": 		  inputPath,
+		"fixed-num":  		  num,
+		"max-satellites-num": maxNum,
+	})
+	logger.Info("initializing position server...")
 	if constellation, err := sdnv1.NewConstellation(inputPath); err != nil {
-		panic(err)
+		logrus.WithError(err).Panic("create constellation failed")
+		return nil
 	} else {
-		return &PositionServer{
-			c:        constellation,
-			cache:    nil,
-			fixedNum: num,
+		satelliteNum := len(constellation.Satellites)
+		if satelliteNum > maxNum {
+			constellation.Satellites = constellation.Satellites[:maxNum]
 		}
+		ps := PositionServer{
+			c:        constellation,
+			cache:    &PositionCache{
+				satCache:   make(map[string]*SatParams),
+				msCache:    GetMissiles(),
+				gsCache:    GetGroundStation(),
+				fixedCache: GetFixedNodes(num),
+			},
+			fixedNum: num,
+			timeStamp: time.Now(),
+		}
+		ps.Init()
+		logger.Info("position server has been initailized")
+		return &ps
 	}
 }
 
@@ -46,62 +72,61 @@ func NewPositionServer(inputPath string, num int) *PositionServer {
 // Description: A http hanlder for getting location of all types of node.
 func (ps *PositionServer) GetLocationHandler(w http.ResponseWriter, req *http.Request) {
 	ps.timeStamp = time.Now()
-	if err := ps.UpdateCache(); err != nil {
+	if err := ps.Update(); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
+		logrus.WithError(err).Error("update cache failed.")
 	}
 	retParams := RetParams{
 		TimeStamp:  ps.timeStamp.UnixMilli(),
 		Satellites: []SatParams{},
-		Missiles:   ps.cache.msCache,
-		Stations:   ps.cache.gsCache,
+		// Missiles:   ps.cache.msCache,
+		// Stations:   ps.cache.gsCache,
 		FixedNodes: ps.cache.fixedCache,
 	}
 	for _, sat := range ps.cache.satCache {
 		retParams.Satellites = append(retParams.Satellites, *sat)
 	}
-	fmt.Println(retParams)
+	logrus.Debugf("return value is %v", retParams)
 	content, _ := json.Marshal(&retParams)
 	w.WriteHeader(http.StatusOK)
 	w.Write(content)
 }
 
-// Function: UpdateCache
+// Function: Update
 // Description: Update cache in ps.cache for future use.
-func (ps *PositionServer) UpdateCache() error {
-	if ps.cache == nil {
-		ps.cache = &PositionCache{
-			satCache:   make(map[string]*SatParams),
-			msCache:    GetMissiles(),
-			gsCache:    GetGroundStation(),
-			fixedCache: GetFixedNodes(ps.fixedNum),
-		}
-		ps.ComputeSatsCache()
-	} else {
-		// Update longitude, latitude, altitude in Satellites
-		year, month, day, hour, minute, second :=
-			ps.timeStamp.Year(),
-			int(ps.timeStamp.Month()),
-			ps.timeStamp.Day(),
-			ps.timeStamp.Hour(),
-			ps.timeStamp.Minute(),
-			ps.timeStamp.Second()
-		for _, sat := range ps.c.Satellites {
-			long, lat, alt := sat.LocationAtTime(
+func (ps *PositionServer) Update() error {
+	// Update longitude, latitude, altitude in Satellites
+	year, month, day, hour, minute, second :=
+		ps.timeStamp.Year(),
+		int(ps.timeStamp.Month()),
+		ps.timeStamp.Day(),
+		ps.timeStamp.Hour(),
+		ps.timeStamp.Minute(),
+		ps.timeStamp.Second()
+	logrus.Info("update longitude, latitude, altitude in cache")
+	
+	var wg sync.WaitGroup
+	wg.Add(len(ps.c.Satellites))
+	for _, sat := range ps.c.Satellites {
+		go func(s sdnv1.Satellite) {
+			long, lat, alt := s.LocationAtTime(
 				year, month, day,
 				hour, minute, second,
 			)
-			ps.cache.satCache[sat.Name].Longitude = long
-			ps.cache.satCache[sat.Name].Latitude = lat
-			ps.cache.satCache[sat.Name].Altitude = alt
-		}
+			ps.cache.satCache[s.Name].Longitude = long
+			ps.cache.satCache[s.Name].Latitude = lat
+			ps.cache.satCache[s.Name].Altitude = alt
+			wg.Done()
+		}(sat)
 	}
+	wg.Wait()
 	return nil
 }
 
-// Function: ComputeSatsCache
+// Function: Init
 // Description: Compute all of sats' information when cache is recently created.
-func (ps *PositionServer) ComputeSatsCache() {
+func (ps *PositionServer) Init() {
 	// Initialze satCache
 	year, month, day, hour, minute, second :=
 		ps.timeStamp.Year(),
@@ -127,7 +152,7 @@ func (ps *PositionServer) ComputeSatsCache() {
 	curTrackID, remainNode := 0, len(ps.cache.satCache)
 	classifySatsUUIDList := [][]string{}
 	visited := make(map[string]bool, remainNode)
-	for k, _ := range ps.cache.satCache {
+	for k := range ps.cache.satCache {
 		visited[k] = false
 	}
 	for remainNode > 0 {
@@ -140,6 +165,7 @@ func (ps *PositionServer) ComputeSatsCache() {
 			}
 		}
 		// Iterate to find sats in the same track(|height - standardHeight| < 500)
+		curOrbitSize := 0
 		for key, sat := range ps.cache.satCache {
 			if !visited[key] && math.Abs(sat.Altitude-standardHeight) < 500 {
 				if len(classifySatsUUIDList) <= curTrackID {
@@ -148,6 +174,11 @@ func (ps *PositionServer) ComputeSatsCache() {
 				classifySatsUUIDList[curTrackID] = append(classifySatsUUIDList[curTrackID], key) // Update result
 				visited[key] = true                                                              // Mark as visited
 				remainNode--
+				curOrbitSize++
+				if curOrbitSize >= MaxOrbitSize {
+					curTrackID++
+					curOrbitSize = 0
+				}
 			}
 		}
 		curTrackID++
@@ -170,17 +201,18 @@ func (ps *PositionServer) ComputeSatsCache() {
 			ps.cache.satCache[key].InTrackID = inTrackID
 		}
 	}
-
-	fmt.Println(classifySatsUUIDList)
+	
+	logrus.WithField("group-num", len(classifySatsUUIDList)).Debug(classifySatsUUIDList)
 }
 
 // Function: RunPositionModule
 // Description: Start Position Computing Module.
 // 1. inputPath: TLE file's path.
 // 2. fixedNum: The number of fixed network pod expected to generate.
-func RunPositionModule(inputPath string, fixedNum int) {
+// 3. maxNum: The max number of satellites.
+func RunPositionModule(inputPath string, fixedNum int, maxNum int) {
 	// Construct Constellation from file
-	ps := NewPositionServer(inputPath, fixedNum)
+	ps := NewPositionServer(inputPath, fixedNum, maxNum)
 
 	// Bind handler and start server
 	http.HandleFunc("/location", ps.GetLocationHandler)

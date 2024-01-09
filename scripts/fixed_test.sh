@@ -5,4 +5,4 @@ CTL=$(cd "$(dirname $0)/../bin" && pwd)/sdnctl
 
 # $CLEAN
 # Use self-defined position module
-$CTL init -u http://localhost:30100/location -n 9 --test
+$CTL init -u http://localhost:30100/location -n 15 --test
