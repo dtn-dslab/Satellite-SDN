@@ -3,10 +3,10 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"ws/dtn-satellite-sdn/sdn"
-	"ws/dtn-satellite-sdn/sdn/util"
 )
 
 var (
@@ -20,6 +20,10 @@ var (
 		Use:   "init",
 		Short: "Init a Satellite Network emulation environment.",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
+			if is_debug {
+				logrus.SetLevel(logrus.DebugLevel)
+			}
 			if is_test {
 				if err := sdn.RunSDNServerTest(url, node, interval); err != nil {
 					return fmt.Errorf("init test emulation environment failed: %v", err)
@@ -29,7 +33,6 @@ var (
 					return fmt.Errorf("init emulation environment failed: %v", err)
 				}
 			}
-			util.DEBUG = is_debug
 			return nil
 		},
 	}

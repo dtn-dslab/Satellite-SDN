@@ -5,4 +5,4 @@ CTL=$(cd "$(dirname $0)/../bin" && pwd)/sdnctl
 
 $CLEAN
 # Use postion interface provided by qimeng
-$CTL init -u http://localhost:32121/Location/Location  -n 9 #-i 120
+$CTL init -u http://localhost:32121/Location/Location  -n 15 #-i 120

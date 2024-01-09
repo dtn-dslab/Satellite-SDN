@@ -1,14 +1,16 @@
 package clientset
 
 import (
+	"container/list"
 	"fmt"
 	"sync"
-	"container/list"
 
 	"ws/dtn-satellite-sdn/sdn/link"
 	"ws/dtn-satellite-sdn/sdn/route"
 	satv2 "ws/dtn-satellite-sdn/sdn/type/v2"
 	"ws/dtn-satellite-sdn/sdn/util"
+
+	"github.com/sirupsen/logrus"
 )
 
 type NetworkInterface interface {
@@ -174,10 +176,10 @@ func (n *Network) UpdateNetwork(info *OrbitInfo) {
 	// Call route calculation func in package route
 	n.RouteGraph = route.ComputeRoutes(distanceMapForRoute, util.ThreadNums)
 
-	if util.DEBUG {
-		fmt.Println(n.Metadata.IndexUUIDMap)
-		fmt.Println(n.RouteGraph)
-	}
+	logrus.WithFields(logrus.Fields{
+		"name-map": n.Metadata.IndexUUIDMap,
+		"route-graph": n.RouteGraph,
+	}).Debug("update network finished")
 }
 
 func (n *Network) CheckConnection(idx1, idx2 int) bool {
