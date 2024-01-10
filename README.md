@@ -1,13 +1,12 @@
 # Satellite-SDN
 A SDN-style satellite network emulation system running on K8s cluster.
 
-## Description
+Satellite-SDN provides users with a CLI interface `sdnctl pos` to customize emulation environment (the typical input is a TLE file). Satellite-SDN builds a emulation env according to informations provided by User Module and updates env with timeout specified by the user.
+
 <div align="center">
     <img src="./asset/arch.png" width=600>
 </div>
 <!-- ![](./asset/arch.png) -->
-
-Satellite-SDN provides users with a CLI interface `sdnctl pos` to customize emulation environment (the typical input is a TLE file). Satellite-SDN builds a emulation env according to informations provided by User Module and updates env with timeout specified by the user.
 
 ## How it works
 
