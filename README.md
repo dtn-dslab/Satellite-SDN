@@ -2,11 +2,51 @@
 A SDN-style satellite network emulation system running on K8s cluster.
 
 ## Description
-![](./asset/arch.jpg)
+<div align="center">
+    <img src="./asset/arch.png" width=600>
+</div>
+<!-- ![](./asset/arch.png) -->
 
-Satellite-SDN provides users with a CLI interface to customize emulation environment (the typical input is a TLE file). Satellite-SDN builds a emulation env according to satellite orbit described by TLE file and updates env with timeout specified by the user.
+Satellite-SDN provides users with a CLI interface `sdnctl pos` to customize emulation environment (the typical input is a TLE file). Satellite-SDN builds a emulation env according to informations provided by User Module and updates env with timeout specified by the user.
 
-## Getting Started
+## How it works
+
+Satellite-SDN has 4 components:
+1. SDN Server: `/sdn`
+2. User Module: `/pos`
+3. Route CRD Controller: `/controllers`
+4. CLI Interface: `/cmd`
+
+A **CNI plugin** like Cilium, Flannel is needed. Also, you should install [**kubedtn**](https://github.com/dtn-dslab/kube-dtn) to enable `Topology` Custom Resource, which is of great importance for our system.
+
+And you should use our specified image `electronicwaste/podserver:<tag>` for route deployment.
+
+### SDN Server
+
+SDN server processes params from User Module and deploy `Pod`,`Topology`, `Route` to K8s cluster.
+
+### User Module
+
+Currently, User Module can only provide location information. You can specify TLE file, from which User Module will generate location informations, passing them to SDN Server.
+
+**Build**: `make sdn`
+
+**Run**: `./bin/sdnctl pos [FLAGS]`
+
+### Route CRD Controller
+
+This component aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
+
+It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/) 
+which provides a reconcile function responsible for synchronizing resources untile the desired state is reached on the cluster 
+
+### CLI Interface
+
+**Build**: `make sdn`
+
+**Run**: `./bin/sdnctl init [FLAGS]`
+
+## Deploy Route Controller
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
 **Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
@@ -51,72 +91,6 @@ Use PR to merge your branch into main branch.
 
 And commit comment should obey [git commit norm](https://zhuanlan.zhihu.com/p/182553920)
 
-
-### How it works
-
-Satellite-SDN has 3 components:
-1. SDN Server: `/sdn`
-2. Route CRD Controller: `/controllers`
-3. CLI Interface: `/cmd`
-
-
-**SDN Server**
-
-SDN server provides function call interfaces for CLI interfaces.
-
-Two main APIs:
-```
-func RunSatelliteSDN(startParams) error;
-func DelSatelliteSDN(endParams) error;
-```
-
-Http interface and grpc interface are being built now.
-
-Https interface:
-```
-func CreateSDNHandler(w http.ResponseWriter, r *http.Request);
-func UpdateSDNHandler(w http.ResponseWriter, r *http.Request);
-func DelSDNHandler(w http.ResponseWriter, r *http.Request);
-```
-
-**Route CRD Controller**
-
-This component aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
-
-It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/) 
-which provides a reconcile function responsible for synchronizing resources untile the desired state is reached on the cluster 
-
-**CLI Interface**
-
-**Build**: `make sdn`
-
-**Run**: `./bin/sdnctl init [FLAGS]`
-
-### Test It Out
-1. Install the CRDs into the cluster:
-
-```sh
-make install
-```
-
-2. Run your controller (this will run in the foreground, so switch to a new terminal if you want to leave it running):
-
-```sh
-make run
-```
-
-**NOTE:** You can also run this in one step by running: `make install run`
-
-### Modifying the API definitions
-If you are editing the API definitions, generate the manifests such as CRs or CRDs using:
-
-```sh
-make manifests
-```
-
-**NOTE:** Run `make --help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
 
 ## License
 
